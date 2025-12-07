@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Entity, Relation, MeriseModel, MLDModel, ViewMode, SQLDialect, Attribute } from '@/types/merise';
+import { Entity, Relation, MeriseModel, MLDModel, MLDColumn, ViewMode, SQLDialect, Attribute } from '@/types/merise';
 import { transformMCDtoMLD } from '@/lib/mcdToMld';
 import { generateSQL } from '@/lib/sqlGenerator';
 
@@ -29,6 +29,9 @@ interface MeriseStore {
   addRelation: (relation: Relation) => void;
   updateRelation: (id: string, updates: Partial<Relation>) => void;
   removeRelation: (id: string) => void;
+  
+  // MLD actions
+  addColumnToTable: (tableId: string, column: MLDColumn) => void;
   
   // Selection
   selectEntity: (id: string | null) => void;
@@ -157,6 +160,24 @@ export const useMeriseStore = create<MeriseStore>((set, get) => ({
 
   selectEntity: (id) => set({ selectedEntityId: id, selectedRelationId: null }),
   selectRelation: (id) => set({ selectedRelationId: id, selectedEntityId: null }),
+
+  addColumnToTable: (tableId, column) => set((state) => {
+    if (!state.mldModel) return state;
+    
+    const updatedMldModel = {
+      ...state.mldModel,
+      tables: state.mldModel.tables.map((table) =>
+        table.id === tableId
+          ? { ...table, columns: [...table.columns, column] }
+          : table
+      ),
+    };
+    
+    // Regenerate SQL after adding column
+    const sql = generateSQL(updatedMldModel, state.sqlDialect);
+    
+    return { mldModel: updatedMldModel, generatedSQL: sql };
+  }),
 
   transformToMLD: () => {
     const { model } = get();

@@ -1,19 +1,38 @@
 import { useState } from 'react';
 import { Plus, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useMeriseStore } from '@/hooks/useMeriseStore';
+import { AddColumnDialog } from '@/components/dialogs/AddColumnDialog';
 
 export function MPDSidebar() {
-  const { mldModel, generatedSQL, sqlDialect } = useMeriseStore();
+  const { mldModel, generatedSQL, sqlDialect, addColumnToTable } = useMeriseStore();
   const [selectedTable, setSelectedTable] = useState<string>('');
+  const [isAddColumnOpen, setIsAddColumnOpen] = useState(false);
 
   if (!mldModel) return null;
 
   const currentTable = mldModel.tables.find(t => t.name === selectedTable);
+
+  const handleAddColumn = (column: {
+    name: string;
+    type: string;
+    isPrimaryKey: boolean;
+    isNullable: boolean;
+  }) => {
+    if (currentTable) {
+      addColumnToTable(currentTable.id, {
+        id: `col_${Date.now()}`,
+        name: column.name,
+        type: column.type,
+        isPrimaryKey: column.isPrimaryKey,
+        isForeignKey: false,
+        isNullable: column.isNullable,
+      });
+    }
+  };
 
   return (
     <div className="w-80 bg-card border-r border-border flex flex-col h-full overflow-hidden">
@@ -67,7 +86,12 @@ export function MPDSidebar() {
             </div>
           )}
 
-          <Button variant="outline" className="w-full text-pk border-pk hover:bg-pk/10">
+          <Button 
+            variant="outline" 
+            className="w-full text-pk border-pk hover:bg-pk/10"
+            onClick={() => setIsAddColumnOpen(true)}
+            disabled={!currentTable}
+          >
             <Plus className="w-4 h-4 mr-2" />
             Ajouter un champ
           </Button>
@@ -81,6 +105,12 @@ export function MPDSidebar() {
           </pre>
         </div>
       </div>
+
+      <AddColumnDialog
+        open={isAddColumnOpen}
+        onOpenChange={setIsAddColumnOpen}
+        onAdd={handleAddColumn}
+      />
     </div>
   );
 }

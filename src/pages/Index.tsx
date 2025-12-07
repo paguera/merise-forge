@@ -1,11 +1,27 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { Header } from '@/components/Header';
+import { MCDSidebar } from '@/components/sidebar/MCDSidebar';
+import { MLDSidebar } from '@/components/sidebar/MLDSidebar';
+import { MPDSidebar } from '@/components/sidebar/MPDSidebar';
+import { MCDCanvas } from '@/components/canvas/MCDCanvas';
+import { MLDCanvas } from '@/components/canvas/MLDCanvas';
+import { MPDCanvas } from '@/components/canvas/MPDCanvas';
+import { useMeriseStore } from '@/hooks/useMeriseStore';
 
 const Index = () => {
+  const { viewMode } = useMeriseStore();
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+    <div className="h-screen flex flex-col bg-background overflow-hidden">
+      <Header />
+      
+      <div className="flex-1 flex overflow-hidden">
+        {viewMode === 'MCD' && <MCDSidebar />}
+        {viewMode === 'MLD' && <MLDSidebar />}
+        {viewMode === 'MPD' && <MPDSidebar />}
+        
+        {viewMode === 'MCD' && <MCDCanvas />}
+        {viewMode === 'MLD' && <MLDCanvas />}
+        {viewMode === 'MPD' && <MPDCanvas />}
       </div>
     </div>
   );

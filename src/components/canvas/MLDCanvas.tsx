@@ -1,5 +1,6 @@
 import { useMeriseStore } from '@/hooks/useMeriseStore';
 import { TableNode } from './TableNode';
+import { MLDConnectionLine } from './MLDConnectionLine';
 
 export function MLDCanvas() {
   const { mldModel } = useMeriseStore();
@@ -30,36 +31,14 @@ export function MLDCanvas() {
           const toY = toTable.position.y + 50;
           
           return (
-            <g key={relation.id}>
-              <line
-                x1={fromX}
-                y1={fromY}
-                x2={toX}
-                y2={toY}
-                stroke="hsl(var(--muted-foreground))"
-                strokeWidth="1.5"
-                strokeDasharray="6 4"
-              />
-              {/* Cardinality labels */}
-              <text
-                x={fromX + (toX - fromX) * 0.2}
-                y={fromY + (toY - fromY) * 0.2 - 8}
-                fill="hsl(var(--destructive))"
-                fontSize="14"
-                fontWeight="bold"
-              >
-                {relation.type === 'N-M' ? 'N' : relation.type === '1-N' ? 'N' : '1'}
-              </text>
-              <text
-                x={fromX + (toX - fromX) * 0.8}
-                y={fromY + (toY - fromY) * 0.8 - 8}
-                fill="hsl(var(--destructive))"
-                fontSize="14"
-                fontWeight="bold"
-              >
-                {relation.type === 'N-M' ? 'M' : '1'}
-              </text>
-            </g>
+            <MLDConnectionLine
+              key={relation.id}
+              fromX={fromX}
+              fromY={fromY}
+              toX={toX}
+              toY={toY}
+              relationType={relation.type as '1-1' | '1-N' | 'N-M'}
+            />
           );
         })}
       </svg>

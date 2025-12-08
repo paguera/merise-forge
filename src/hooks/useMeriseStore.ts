@@ -32,6 +32,7 @@ interface MeriseStore {
   
   // MLD actions
   addColumnToTable: (tableId: string, column: MLDColumn) => void;
+  updateTablePosition: (tableId: string, position: { x: number; y: number }) => void;
   
   // Selection
   selectEntity: (id: string | null) => void;
@@ -177,6 +178,19 @@ export const useMeriseStore = create<MeriseStore>((set, get) => ({
     const sql = generateSQL(updatedMldModel, state.sqlDialect);
     
     return { mldModel: updatedMldModel, generatedSQL: sql };
+  }),
+
+  updateTablePosition: (tableId, position) => set((state) => {
+    if (!state.mldModel) return state;
+    
+    return {
+      mldModel: {
+        ...state.mldModel,
+        tables: state.mldModel.tables.map((table) =>
+          table.id === tableId ? { ...table, position } : table
+        ),
+      },
+    };
   }),
 
   transformToMLD: () => {

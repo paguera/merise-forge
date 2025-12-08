@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { MLDTable } from '@/types/merise';
+import { useMeriseStore } from '@/hooks/useMeriseStore';
 
 interface TableNodeProps {
   table: MLDTable;
@@ -7,49 +8,58 @@ interface TableNodeProps {
 }
 
 export function TableNode({ table, showTypes }: TableNodeProps) {
-  const [position, setPosition] = useState(table.position);
+  const { updateTablePosition } = useMeriseStore();
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const nodeRef = useRef<HTMLDivElement>(null);
 
   const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
     setIsDragging(true);
     setDragOffset({
-      x: e.clientX - position.x,
-      y: e.clientY - position.y,
+      x: e.clientX - table.position.x,
+      y: e.clientY - table.position.y,
     });
   };
 
-  const handleMouseMove = (e: React.MouseEvent) => {
+  useEffect(() => {
     if (!isDragging) return;
-    
-    const parent = (e.target as HTMLElement).closest('.canvas-bg');
-    if (!parent) return;
-    
-    const rect = parent.getBoundingClientRect();
-    const x = Math.max(0, Math.min(e.clientX - dragOffset.x, rect.width - 200));
-    const y = Math.max(0, Math.min(e.clientY - dragOffset.y, rect.height - 100));
-    
-    setPosition({ x, y });
-    table.position = { x, y };
-  };
 
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
+    const handleMouseMove = (e: MouseEvent) => {
+      const parent = nodeRef.current?.closest('.canvas-bg');
+      if (!parent) return;
+      
+      const rect = parent.getBoundingClientRect();
+      const x = Math.max(0, Math.min(e.clientX - dragOffset.x - rect.left, rect.width - 200));
+      const y = Math.max(0, Math.min(e.clientY - dragOffset.y - rect.top, rect.height - 100));
+      
+      updateTablePosition(table.id, { x, y });
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, dragOffset, table.id, updateTablePosition]);
 
   const isJunction = table.isJunction;
 
   return (
     <div
-      className="absolute cursor-move select-none z-10 animate-scale-in"
+      ref={nodeRef}
+      className={`absolute cursor-move select-none z-10 animate-scale-in ${isDragging ? 'z-50' : ''}`}
       style={{
-        left: position.x,
-        top: position.y,
+        left: table.position.x,
+        top: table.position.y,
       }}
       onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
     >
       <div
         className={`shadow-lg rounded-lg overflow-hidden min-w-[180px] ${

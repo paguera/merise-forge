@@ -1,14 +1,35 @@
 import { useState } from 'react';
-import { Plus, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useMeriseStore } from '@/hooks/useMeriseStore';
 import { Entity, Relation } from '@/types/merise';
 
-type CreationStep = 'entity1' | 'entity2' | 'relation' | 'done';
+type CreationStep = 'entity1' | 'verb' | 'entity2' | 'cardinalities';
+
+const cardinalityDescriptions = {
+  '0,1': 'Zéro ou un(e)',
+  '1,1': 'Exactement un(e)',
+  '0,n': 'Zéro ou plusieurs',
+  '1,n': 'Un ou plusieurs',
+};
+
+const getCardinalityExplanation = (cardinality: string, isRequired: boolean) => {
+  switch (cardinality) {
+    case '0,1':
+      return { text: 'ZÉRO ou UN (Optionnel)', color: 'text-blue-600' };
+    case '1,1':
+      return { text: 'EXACTEMENT UNE (Obligatoire)', color: 'text-green-600' };
+    case '0,n':
+      return { text: 'ZÉRO ou PLUSIEURS (Optionnel)', color: 'text-blue-600' };
+    case '1,n':
+      return { text: 'UN ou PLUSIEURS (Obligatoire)', color: 'text-green-600' };
+    default:
+      return { text: '', color: '' };
+  }
+};
 
 export function MCDSidebar() {
   const { model, addEntity, addRelation, removeEntity } = useMeriseStore();
@@ -19,9 +40,22 @@ export function MCDSidebar() {
   const [entity2Name, setEntity2Name] = useState('');
   const [selectedEntity1Id, setSelectedEntity1Id] = useState('');
   const [selectedEntity2Id, setSelectedEntity2Id] = useState('');
-  const [relationName, setRelationName] = useState('');
-  const [cardinality1, setCardinality1] = useState<'0,1' | '1,1' | '0,n' | '1,n'>('1,n');
-  const [cardinality2, setCardinality2] = useState<'0,1' | '1,1' | '0,n' | '1,n'>('1,n');
+  const [verbName, setVerbName] = useState('');
+  const [cardinality1, setCardinality1] = useState<'0,1' | '1,1' | '0,n' | '1,n'>('1,1');
+  const [cardinality2, setCardinality2] = useState<'0,1' | '1,1' | '0,n' | '1,n'>('0,n');
+
+  // Get entity names for display
+  const getEntity1Name = () => {
+    if (isNewEntity1) return entity1Name;
+    const entity = model.entities.find(e => e.id === selectedEntity1Id);
+    return entity?.name || '';
+  };
+
+  const getEntity2Name = () => {
+    if (isNewEntity2) return entity2Name;
+    const entity = model.entities.find(e => e.id === selectedEntity2Id);
+    return entity?.name || '';
+  };
 
   const handleNext = () => {
     if (step === 'entity1') {
@@ -37,6 +71,8 @@ export function MCDSidebar() {
         addEntity(newEntity);
         setSelectedEntity1Id(newEntity.id);
       }
+      setStep('verb');
+    } else if (step === 'verb') {
       setStep('entity2');
     } else if (step === 'entity2') {
       if (isNewEntity2 && entity2Name.trim()) {
@@ -51,33 +87,37 @@ export function MCDSidebar() {
         addEntity(newEntity);
         setSelectedEntity2Id(newEntity.id);
       }
-      setStep('relation');
-    } else if (step === 'relation') {
-      if (relationName.trim() && (selectedEntity1Id || !isNewEntity1) && (selectedEntity2Id || !isNewEntity2)) {
-        const e1Id = isNewEntity1 ? selectedEntity1Id : selectedEntity1Id;
-        const e2Id = isNewEntity2 ? selectedEntity2Id : selectedEntity2Id;
-        
-        const entity1 = model.entities.find(e => e.id === e1Id);
-        const entity2 = model.entities.find(e => e.id === e2Id);
-        
-        if (entity1 && entity2) {
-          const newRelation: Relation = {
-            id: `rel_${Date.now()}`,
-            name: relationName.trim(),
-            entity1Id: e1Id,
-            entity2Id: e2Id,
-            cardinality1,
-            cardinality2,
-            position: {
-              x: (entity1.position.x + entity2.position.x) / 2,
-              y: (entity1.position.y + entity2.position.y) / 2,
-            },
-          };
-          addRelation(newRelation);
-        }
+      setStep('cardinalities');
+    } else if (step === 'cardinalities') {
+      const e1Id = isNewEntity1 ? selectedEntity1Id : selectedEntity1Id;
+      const e2Id = isNewEntity2 ? selectedEntity2Id : selectedEntity2Id;
+      
+      const entity1 = model.entities.find(e => e.id === e1Id);
+      const entity2 = model.entities.find(e => e.id === e2Id);
+      
+      if (entity1 && entity2 && verbName.trim()) {
+        const newRelation: Relation = {
+          id: `rel_${Date.now()}`,
+          name: verbName.trim(),
+          entity1Id: e1Id,
+          entity2Id: e2Id,
+          cardinality1,
+          cardinality2,
+          position: {
+            x: (entity1.position.x + entity2.position.x) / 2,
+            y: (entity1.position.y + entity2.position.y) / 2,
+          },
+        };
+        addRelation(newRelation);
       }
       resetForm();
     }
+  };
+
+  const handleBack = () => {
+    if (step === 'verb') setStep('entity1');
+    else if (step === 'entity2') setStep('verb');
+    else if (step === 'cardinalities') setStep('entity2');
   };
 
   const resetForm = () => {
@@ -88,19 +128,30 @@ export function MCDSidebar() {
     setEntity2Name('');
     setSelectedEntity1Id('');
     setSelectedEntity2Id('');
-    setRelationName('');
-    setCardinality1('1,n');
-    setCardinality2('1,n');
+    setVerbName('');
+    setCardinality1('1,1');
+    setCardinality2('0,n');
   };
 
-  const getStepProgress = () => {
+  const canProceed = () => {
     switch (step) {
-      case 'entity1': return 33;
-      case 'entity2': return 66;
-      case 'relation': return 100;
-      default: return 0;
+      case 'entity1':
+        return isNewEntity1 ? entity1Name.trim() !== '' : selectedEntity1Id !== '';
+      case 'verb':
+        return verbName.trim() !== '';
+      case 'entity2':
+        return isNewEntity2 ? entity2Name.trim() !== '' : selectedEntity2Id !== '';
+      case 'cardinalities':
+        return true;
+      default:
+        return false;
     }
   };
+
+  const entity1Display = getEntity1Name();
+  const entity2Display = getEntity2Name();
+  const card1Explanation = getCardinalityExplanation(cardinality1, cardinality1.startsWith('1'));
+  const card2Explanation = getCardinalityExplanation(cardinality2, cardinality2.startsWith('1'));
 
   return (
     <div className="w-80 bg-card border-r border-border flex flex-col h-full overflow-hidden">
@@ -109,43 +160,37 @@ export function MCDSidebar() {
         <div className="bg-secondary/50 rounded-lg p-5 space-y-4">
           <h2 className="text-lg font-semibold text-foreground">Créateur de Relations</h2>
           
-          {/* Progress bar */}
+          {/* Progress bar - 4 steps */}
           <div className="flex gap-1">
-            <div className={`h-1 flex-1 rounded-full transition-colors ${step === 'entity1' || step === 'entity2' || step === 'relation' ? 'bg-primary' : 'bg-border'}`} />
-            <div className={`h-1 flex-1 rounded-full transition-colors ${step === 'entity2' || step === 'relation' ? 'bg-primary' : 'bg-border'}`} />
-            <div className={`h-1 flex-1 rounded-full transition-colors ${step === 'relation' ? 'bg-primary' : 'bg-border'}`} />
+            <div className={`h-1 flex-1 rounded-full transition-colors ${['entity1', 'verb', 'entity2', 'cardinalities'].includes(step) ? 'bg-primary' : 'bg-border'}`} />
+            <div className={`h-1 flex-1 rounded-full transition-colors ${['verb', 'entity2', 'cardinalities'].includes(step) ? 'bg-primary' : 'bg-border'}`} />
+            <div className={`h-1 flex-1 rounded-full transition-colors ${['entity2', 'cardinalities'].includes(step) ? 'bg-primary' : 'bg-border'}`} />
+            <div className={`h-1 flex-1 rounded-full transition-colors ${step === 'cardinalities' ? 'bg-primary' : 'bg-border'}`} />
           </div>
 
+          {/* Step 1: Entité de départ */}
           {step === 'entity1' && (
             <div className="space-y-4 animate-fade-in">
               <h3 className="font-medium">1. Entité de départ</h3>
               
-              <div className="flex gap-2">
-                <Button 
-                  variant={!isNewEntity1 ? 'outline' : 'secondary'}
-                  className="flex-1"
-                  onClick={() => setIsNewEntity1(false)}
-                >
-                  Existante
-                </Button>
-                <Button 
-                  variant={isNewEntity1 ? 'default' : 'outline'}
-                  className="flex-1"
-                  onClick={() => setIsNewEntity1(true)}
-                >
-                  Nouvelle
-                </Button>
-              </div>
+              <Button 
+                variant={isNewEntity1 ? 'outline' : 'secondary'}
+                className="w-full"
+                onClick={() => setIsNewEntity1(true)}
+              >
+                Nouvelle
+              </Button>
 
               {isNewEntity1 ? (
                 <Input
-                  placeholder="Nom de l'entité (ex: User)"
+                  placeholder="Nom de l'entité"
                   value={entity1Name}
                   onChange={(e) => setEntity1Name(e.target.value)}
+                  className="border-primary"
                 />
               ) : (
                 <Select value={selectedEntity1Id} onValueChange={setSelectedEntity1Id}>
-                  <SelectTrigger>
+                  <SelectTrigger className="border-primary">
                     <SelectValue placeholder="Sélectionner une entité" />
                   </SelectTrigger>
                   <SelectContent>
@@ -155,39 +200,59 @@ export function MCDSidebar() {
                   </SelectContent>
                 </Select>
               )}
+
+              {model.entities.length > 0 && (
+                <Button 
+                  variant="ghost"
+                  className="w-full text-muted-foreground"
+                  onClick={() => setIsNewEntity1(false)}
+                >
+                  Ou sélectionner une existante
+                </Button>
+              )}
             </div>
           )}
 
+          {/* Step 2: L'Association (verbe) */}
+          {step === 'verb' && (
+            <div className="space-y-4 animate-fade-in">
+              <h3 className="font-medium">2. L'Association</h3>
+              <p className="text-sm text-muted-foreground">
+                Action reliant <span className="text-primary font-medium">{entity1Display}</span> ?
+              </p>
+              
+              <Input
+                placeholder="Verbe (ex: Possède, Achète)"
+                value={verbName}
+                onChange={(e) => setVerbName(e.target.value)}
+                className="border-primary"
+              />
+            </div>
+          )}
+
+          {/* Step 3: Entité d'arrivée */}
           {step === 'entity2' && (
             <div className="space-y-4 animate-fade-in">
-              <h3 className="font-medium">2. Entité d'arrivée</h3>
+              <h3 className="font-medium">3. Entité d'arrivée</h3>
               
-              <div className="flex gap-2">
-                <Button 
-                  variant={!isNewEntity2 ? 'outline' : 'secondary'}
-                  className="flex-1"
-                  onClick={() => setIsNewEntity2(false)}
-                >
-                  Existante
-                </Button>
-                <Button 
-                  variant={isNewEntity2 ? 'default' : 'outline'}
-                  className="flex-1"
-                  onClick={() => setIsNewEntity2(true)}
-                >
-                  Nouvelle
-                </Button>
-              </div>
+              <Button 
+                variant={isNewEntity2 ? 'outline' : 'secondary'}
+                className="w-full"
+                onClick={() => setIsNewEntity2(true)}
+              >
+                Nouvelle
+              </Button>
 
               {isNewEntity2 ? (
                 <Input
-                  placeholder="Nom de l'entité (ex: Article)"
+                  placeholder="Nom de l'entité"
                   value={entity2Name}
                   onChange={(e) => setEntity2Name(e.target.value)}
+                  className="border-primary"
                 />
               ) : (
                 <Select value={selectedEntity2Id} onValueChange={setSelectedEntity2Id}>
-                  <SelectTrigger>
+                  <SelectTrigger className="border-primary">
                     <SelectValue placeholder="Sélectionner une entité" />
                   </SelectTrigger>
                   <SelectContent>
@@ -197,70 +262,117 @@ export function MCDSidebar() {
                   </SelectContent>
                 </Select>
               )}
+
+              {model.entities.filter(e => e.id !== selectedEntity1Id).length > 0 && (
+                <Button 
+                  variant="ghost"
+                  className="w-full text-muted-foreground"
+                  onClick={() => setIsNewEntity2(false)}
+                >
+                  Ou sélectionner une existante
+                </Button>
+              )}
             </div>
           )}
 
-          {step === 'relation' && (
-            <div className="space-y-4 animate-fade-in">
-              <h3 className="font-medium">3. Relation (verbe)</h3>
+          {/* Step 4: Cardinalités */}
+          {step === 'cardinalities' && (
+            <div className="space-y-5 animate-fade-in">
+              <h3 className="font-medium">4. Cardinalités</h3>
               
-              <Input
-                placeholder="Verbe (ex: Achète, Possède)"
-                value={relationName}
-                onChange={(e) => setRelationName(e.target.value)}
-              />
+              {/* Direction 1: Entity1 → Entity2 */}
+              <div className="space-y-3 p-3 bg-background rounded-lg border border-border">
+                <Badge variant="secondary" className="bg-primary/10 text-primary border-0">
+                  Sens {entity1Display} → {entity2Display}
+                </Badge>
+                
+                <p className="text-sm">
+                  Un(e) <span className="font-semibold">{entity1Display}</span> peut{' '}
+                  <span className="italic text-primary">{verbName.toUpperCase()}</span>...
+                </p>
+                
+                <Select value={cardinality1} onValueChange={(v) => setCardinality1(v as any)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0,1">0,1 - Zéro ou un(e)</SelectItem>
+                    <SelectItem value="1,1">1,1 - Exactement un(e)</SelectItem>
+                    <SelectItem value="0,n">0,n - Zéro ou plusieurs</SelectItem>
+                    <SelectItem value="1,n">1,n - Un ou plusieurs</SelectItem>
+                  </SelectContent>
+                </Select>
+                
+                <p className="text-sm flex items-start gap-2">
+                  <span className="text-muted-foreground">→</span>
+                  <span>
+                    Un(e) {entity1Display} {verbName.toUpperCase()}{' '}
+                    <span className={card1Explanation.color}>{card1Explanation.text}</span>{' '}
+                    {entity2Display}.
+                  </span>
+                </p>
+              </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label className="text-xs text-muted-foreground">Cardinalité 1</Label>
-                  <Select value={cardinality1} onValueChange={(v) => setCardinality1(v as any)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="0,1">0,1</SelectItem>
-                      <SelectItem value="1,1">1,1</SelectItem>
-                      <SelectItem value="0,n">0,n</SelectItem>
-                      <SelectItem value="1,n">1,n</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">Cardinalité 2</Label>
-                  <Select value={cardinality2} onValueChange={(v) => setCardinality2(v as any)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="0,1">0,1</SelectItem>
-                      <SelectItem value="1,1">1,1</SelectItem>
-                      <SelectItem value="0,n">0,n</SelectItem>
-                      <SelectItem value="1,n">1,n</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              {/* Direction 2: Entity2 → Entity1 */}
+              <div className="space-y-3 p-3 bg-background rounded-lg border border-border">
+                <Badge variant="secondary" className="bg-primary/10 text-primary border-0">
+                  Sens {entity2Display} → {entity1Display}
+                </Badge>
+                
+                <p className="text-sm">
+                  Inversement, un(e) <span className="font-semibold text-primary">{entity2Display}</span> peut être{' '}
+                  <span className="italic text-primary">{verbName.toUpperCase()}</span> par...
+                </p>
+                
+                <Select value={cardinality2} onValueChange={(v) => setCardinality2(v as any)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0,1">0,1 - Zéro ou un(e)</SelectItem>
+                    <SelectItem value="1,1">1,1 - Exactement un(e)</SelectItem>
+                    <SelectItem value="0,n">0,n - Zéro ou plusieurs {entity1Display}</SelectItem>
+                    <SelectItem value="1,n">1,n - Un ou plusieurs {entity1Display}</SelectItem>
+                  </SelectContent>
+                </Select>
+                
+                <p className="text-sm flex items-start gap-2">
+                  <span className="text-muted-foreground">→</span>
+                  <span>
+                    Un(e) {entity2Display} est {verbName.toUpperCase()} par{' '}
+                    <span className={card2Explanation.color}>{card2Explanation.text}</span>{' '}
+                    {entity1Display}.
+                  </span>
+                </p>
               </div>
             </div>
           )}
 
-          <Button 
-            onClick={handleNext} 
-            className="w-full"
-            disabled={
-              (step === 'entity1' && isNewEntity1 && !entity1Name.trim()) ||
-              (step === 'entity1' && !isNewEntity1 && !selectedEntity1Id) ||
-              (step === 'entity2' && isNewEntity2 && !entity2Name.trim()) ||
-              (step === 'entity2' && !isNewEntity2 && !selectedEntity2Id) ||
-              (step === 'relation' && !relationName.trim())
-            }
-          >
-            {step === 'relation' ? 'Créer la relation' : 'Suivant'}
-          </Button>
+          {/* Navigation buttons */}
+          <div className="flex gap-2">
+            {step !== 'entity1' && (
+              <Button 
+                variant="ghost"
+                onClick={handleBack}
+                className="flex-1"
+              >
+                Retour
+              </Button>
+            )}
+            <Button 
+              onClick={handleNext} 
+              className={`${step === 'entity1' ? 'w-full' : 'flex-1'} ${step === 'cardinalities' ? 'bg-green-600 hover:bg-green-700' : ''}`}
+              disabled={!canProceed()}
+            >
+              {step === 'cardinalities' ? 'Générer le modèle' : 'Suivant'}
+            </Button>
+          </div>
         </div>
 
-        {/* Entities List */}
-        <div className="bg-secondary/50 rounded-lg p-5 space-y-3">
+        {/* Entities & Relations List */}
+        <div className="bg-secondary/50 rounded-lg p-5 space-y-4">
           <h3 className="font-semibold text-foreground">Données</h3>
+          
           <div>
             <p className="text-xs text-primary font-medium uppercase tracking-wide mb-2">
               Entités ({model.entities.length})
@@ -278,7 +390,27 @@ export function MCDSidebar() {
                 </Badge>
               ))}
               {model.entities.length === 0 && (
-                <span className="text-sm text-muted-foreground">Aucune entité</span>
+                <span className="text-sm text-muted-foreground italic">Vide</span>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <p className="text-xs text-primary font-medium uppercase tracking-wide mb-2">
+              Relations ({model.relations.length})
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {model.relations.map((relation) => {
+                const e1 = model.entities.find(e => e.id === relation.entity1Id);
+                const e2 = model.entities.find(e => e.id === relation.entity2Id);
+                return (
+                  <Badge key={relation.id} variant="outline" className="px-3 py-1">
+                    {e1?.name} — {relation.name} — {e2?.name}
+                  </Badge>
+                );
+              })}
+              {model.relations.length === 0 && (
+                <span className="text-sm text-muted-foreground italic">Vide</span>
               )}
             </div>
           </div>

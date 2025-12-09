@@ -1,13 +1,15 @@
-import { Database, Download } from 'lucide-react';
+import { Database, Download, Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useMeriseStore } from '@/hooks/useMeriseStore';
+import { useTheme } from '@/hooks/useTheme';
 import { ViewMode, SQLDialect } from '@/types/merise';
 import { toast } from 'sonner';
 
 export function Header() {
   const { viewMode, setViewMode, sqlDialect, setSqlDialect, generatedSQL, model, mldModel } = useMeriseStore();
+  const { theme, toggleTheme } = useTheme();
 
   const handleExportJPG = () => {
     const canvas = document.getElementById('merise-canvas');
@@ -86,6 +88,10 @@ export function Header() {
           </>
         )}
         
+        <Button variant="ghost" size="icon" onClick={toggleTheme} className="text-foreground">
+          {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+        </Button>
+
         <Button variant="secondary" onClick={handleExportJPG} className="bg-foreground text-background hover:bg-foreground/90">
           <Download className="w-4 h-4 mr-2" />
           JPG

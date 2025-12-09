@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { Entity, Relation, MeriseModel, MLDModel, MLDColumn, ViewMode, SQLDialect, Attribute } from '@/types/merise';
 import { transformMCDtoMLD } from '@/lib/mcdToMld';
 import { generateSQL } from '@/lib/sqlGenerator';
@@ -43,17 +44,19 @@ interface MeriseStore {
   generateSQLCode: () => void;
 }
 
-export const useMeriseStore = create<MeriseStore>((set, get) => ({
-  model: {
-    entities: [],
-    relations: [],
-  },
-  mldModel: null,
-  viewMode: 'MCD',
-  sqlDialect: 'MariaDB',
-  selectedEntityId: null,
-  selectedRelationId: null,
-  generatedSQL: '',
+export const useMeriseStore = create<MeriseStore>()(
+  persist(
+    (set, get) => ({
+      model: {
+        entities: [],
+        relations: [],
+      },
+      mldModel: null,
+      viewMode: 'MCD',
+      sqlDialect: 'MariaDB',
+      selectedEntityId: null,
+      selectedRelationId: null,
+      generatedSQL: '',
 
   setViewMode: (mode) => {
     if (mode === 'MLD' || mode === 'MPD') {
@@ -211,11 +214,22 @@ export const useMeriseStore = create<MeriseStore>((set, get) => ({
     set({ mldModel: newMldModel });
   },
 
-  generateSQLCode: () => {
-    const { mldModel, sqlDialect } = get();
-    if (mldModel) {
-      const sql = generateSQL(mldModel, sqlDialect);
-      set({ generatedSQL: sql });
+      generateSQLCode: () => {
+        const { mldModel, sqlDialect } = get();
+        if (mldModel) {
+          const sql = generateSQL(mldModel, sqlDialect);
+          set({ generatedSQL: sql });
+        }
+      },
+    }),
+    {
+      name: 'merise-store',
+      partialize: (state) => ({
+        model: state.model,
+        mldModel: state.mldModel,
+        sqlDialect: state.sqlDialect,
+        generatedSQL: state.generatedSQL,
+      }),
     }
-  },
-}));
+  )
+);

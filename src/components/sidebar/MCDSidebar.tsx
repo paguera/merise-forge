@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { X } from 'lucide-react';
+import { X, Pencil, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useMeriseStore } from '@/hooks/useMeriseStore';
 import { Entity, Relation } from '@/types/merise';
+import { EditEntityDialog } from '@/components/dialogs/EditEntityDialog';
+import { toast } from 'sonner';
 
 type CreationStep = 'entity1' | 'verb' | 'entity2' | 'cardinalities';
 
@@ -32,7 +34,8 @@ const getCardinalityExplanation = (cardinality: string, isRequired: boolean) => 
 };
 
 export function MCDSidebar() {
-  const { model, addEntity, addRelation, removeEntity } = useMeriseStore();
+  const { model, addEntity, addRelation, removeEntity, updateEntity, addAttribute, updateAttribute, removeAttribute, resetModel } = useMeriseStore();
+  const [editingEntity, setEditingEntity] = useState<Entity | null>(null);
   const [step, setStep] = useState<CreationStep>('entity1');
   const [isNewEntity1, setIsNewEntity1] = useState(true);
   const [isNewEntity2, setIsNewEntity2] = useState(true);
@@ -371,7 +374,21 @@ export function MCDSidebar() {
 
         {/* Entities & Relations List */}
         <div className="bg-secondary/50 rounded-lg p-5 space-y-4">
-          <h3 className="font-semibold text-foreground">Données</h3>
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold text-foreground">Données</h3>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-destructive hover:text-destructive"
+              onClick={() => {
+                resetModel();
+                toast.success('Modèle réinitialisé');
+              }}
+            >
+              <RotateCcw className="w-4 h-4 mr-1" />
+              Reset
+            </Button>
+          </div>
           
           <div>
             <p className="text-xs text-primary font-medium uppercase tracking-wide mb-2">
@@ -381,6 +398,12 @@ export function MCDSidebar() {
               {model.entities.map((entity) => (
                 <Badge key={entity.id} variant="secondary" className="px-3 py-1 gap-2">
                   {entity.name}
+                  <button 
+                    onClick={() => setEditingEntity(entity)}
+                    className="hover:text-primary transition-colors"
+                  >
+                    <Pencil className="w-3 h-3" />
+                  </button>
                   <button 
                     onClick={() => removeEntity(entity.id)}
                     className="hover:text-destructive transition-colors"
@@ -416,6 +439,16 @@ export function MCDSidebar() {
           </div>
         </div>
       </div>
+
+      <EditEntityDialog
+        open={!!editingEntity}
+        onOpenChange={(open) => !open && setEditingEntity(null)}
+        entity={editingEntity}
+        onSave={(updates) => editingEntity && updateEntity(editingEntity.id, updates)}
+        onAddAttribute={(attr) => editingEntity && addAttribute(editingEntity.id, attr)}
+        onUpdateAttribute={(attrId, updates) => editingEntity && updateAttribute(editingEntity.id, attrId, updates)}
+        onRemoveAttribute={(attrId) => editingEntity && removeAttribute(editingEntity.id, attrId)}
+      />
     </div>
   );
 }

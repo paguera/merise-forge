@@ -33,6 +33,8 @@ interface MeriseStore {
   
   // MLD actions
   addColumnToTable: (tableId: string, column: MLDColumn) => void;
+  updateColumnInTable: (tableId: string, columnId: string, updates: Partial<MLDColumn>) => void;
+  removeColumnFromTable: (tableId: string, columnId: string) => void;
   updateTablePosition: (tableId: string, position: { x: number; y: number }) => void;
   
   // Selection
@@ -42,6 +44,9 @@ interface MeriseStore {
   // Transformation
   transformToMLD: () => void;
   generateSQLCode: () => void;
+  
+  // Reset
+  resetModel: () => void;
 }
 
 export const useMeriseStore = create<MeriseStore>()(
@@ -177,9 +182,44 @@ export const useMeriseStore = create<MeriseStore>()(
       ),
     };
     
-    // Regenerate SQL after adding column
     const sql = generateSQL(updatedMldModel, state.sqlDialect);
+    return { mldModel: updatedMldModel, generatedSQL: sql };
+  }),
+
+  updateColumnInTable: (tableId, columnId, updates) => set((state) => {
+    if (!state.mldModel) return state;
     
+    const updatedMldModel = {
+      ...state.mldModel,
+      tables: state.mldModel.tables.map((table) =>
+        table.id === tableId
+          ? {
+              ...table,
+              columns: table.columns.map((col) =>
+                col.id === columnId ? { ...col, ...updates } : col
+              ),
+            }
+          : table
+      ),
+    };
+    
+    const sql = generateSQL(updatedMldModel, state.sqlDialect);
+    return { mldModel: updatedMldModel, generatedSQL: sql };
+  }),
+
+  removeColumnFromTable: (tableId, columnId) => set((state) => {
+    if (!state.mldModel) return state;
+    
+    const updatedMldModel = {
+      ...state.mldModel,
+      tables: state.mldModel.tables.map((table) =>
+        table.id === tableId
+          ? { ...table, columns: table.columns.filter((col) => col.id !== columnId) }
+          : table
+      ),
+    };
+    
+    const sql = generateSQL(updatedMldModel, state.sqlDialect);
     return { mldModel: updatedMldModel, generatedSQL: sql };
   }),
 
@@ -220,6 +260,19 @@ export const useMeriseStore = create<MeriseStore>()(
           const sql = generateSQL(mldModel, sqlDialect);
           set({ generatedSQL: sql });
         }
+      },
+
+      resetModel: () => {
+        localStorage.removeItem('merise-store');
+        set({
+          model: { entities: [], relations: [] },
+          mldModel: null,
+          viewMode: 'MCD',
+          sqlDialect: 'MariaDB',
+          selectedEntityId: null,
+          selectedRelationId: null,
+          generatedSQL: '',
+        });
       },
     }),
     {

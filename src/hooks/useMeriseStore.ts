@@ -194,9 +194,21 @@ export const useMeriseStore = create<MeriseStore>((set, get) => ({
   }),
 
   transformToMLD: () => {
-    const { model } = get();
-    const mldModel = transformMCDtoMLD(model);
-    set({ mldModel });
+    const { model, mldModel: existingMldModel } = get();
+    const newMldModel = transformMCDtoMLD(model);
+    
+    // Preserve existing table positions if tables exist
+    if (existingMldModel) {
+      newMldModel.tables = newMldModel.tables.map((table) => {
+        const existingTable = existingMldModel.tables.find((t) => t.id === table.id);
+        if (existingTable) {
+          return { ...table, position: existingTable.position };
+        }
+        return table;
+      });
+    }
+    
+    set({ mldModel: newMldModel });
   },
 
   generateSQLCode: () => {

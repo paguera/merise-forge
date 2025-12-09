@@ -1,16 +1,19 @@
 import { useState } from 'react';
-import { Plus, Menu } from 'lucide-react';
+import { Plus, Menu, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useMeriseStore } from '@/hooks/useMeriseStore';
 import { AddColumnDialog } from '@/components/dialogs/AddColumnDialog';
+import { EditColumnDialog } from '@/components/dialogs/EditColumnDialog';
+import { MLDColumn } from '@/types/merise';
 
 export function MPDSidebar() {
-  const { mldModel, generatedSQL, sqlDialect, addColumnToTable } = useMeriseStore();
+  const { mldModel, generatedSQL, sqlDialect, addColumnToTable, updateColumnInTable, removeColumnFromTable } = useMeriseStore();
   const [selectedTable, setSelectedTable] = useState<string>('');
   const [isAddColumnOpen, setIsAddColumnOpen] = useState(false);
+  const [editingColumn, setEditingColumn] = useState<MLDColumn | null>(null);
 
   if (!mldModel) return null;
 
@@ -68,7 +71,7 @@ export function MPDSidebar() {
                 {currentTable.columns.map((col) => (
                   <div 
                     key={col.id} 
-                    className="flex items-center justify-between bg-card rounded p-2 border border-border"
+                    className="flex items-center justify-between bg-card rounded p-2 border border-border group"
                   >
                     <div className="flex items-center gap-2">
                       {col.isPrimaryKey && (
@@ -79,7 +82,15 @@ export function MPDSidebar() {
                       )}
                       <span className="text-sm">{col.name}</span>
                     </div>
-                    <span className="text-xs text-muted-foreground font-mono">{col.type}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground font-mono">{col.type}</span>
+                      <button
+                        onClick={() => setEditingColumn(col)}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-primary"
+                      >
+                        <Pencil className="w-3 h-3" />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -112,6 +123,22 @@ export function MPDSidebar() {
         open={isAddColumnOpen}
         onOpenChange={setIsAddColumnOpen}
         onAdd={handleAddColumn}
+      />
+
+      <EditColumnDialog
+        open={!!editingColumn}
+        onOpenChange={(open) => !open && setEditingColumn(null)}
+        column={editingColumn}
+        onSave={(updates) => {
+          if (editingColumn && currentTable) {
+            updateColumnInTable(currentTable.id, editingColumn.id, updates);
+          }
+        }}
+        onDelete={() => {
+          if (editingColumn && currentTable) {
+            removeColumnFromTable(currentTable.id, editingColumn.id);
+          }
+        }}
       />
     </div>
   );

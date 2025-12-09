@@ -129,9 +129,6 @@ export function transformMCDtoMLD(mcd: MeriseModel): MLDModel {
     }
   });
 
-  // Reposition tables for MLD view
-  repositionTables(tables);
-
   return { tables, relations };
 }
 
@@ -196,11 +193,3 @@ function createJunctionTable(relation: Relation, entity1: Entity, entity2: Entit
   };
 }
 
-function repositionTables(tables: MLDTable[]): void {
-  // Keep original positions but spread junction tables
-  tables.forEach((table, index) => {
-    if (table.isJunction) {
-      table.position.y += 50;
-    }
-  });
-}

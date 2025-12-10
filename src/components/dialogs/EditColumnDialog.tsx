@@ -21,7 +21,16 @@ interface EditColumnDialogProps {
   onDelete: () => void;
 }
 
-const dataTypes = ['INT', 'VARCHAR', 'TEXT', 'DATE', 'DATETIME', 'BOOLEAN', 'DECIMAL', 'FLOAT'];
+const BASE_TYPES = ['INT', 'VARCHAR', 'TEXT', 'DATE', 'DATETIME', 'BOOLEAN', 'DECIMAL', 'FLOAT'];
+const TYPES_WITH_LENGTH = ['VARCHAR', 'DECIMAL'];
+
+function parseType(type: string): { baseType: string; length: string } {
+  const match = type.match(/^(\w+)(?:\(([^)]+)\))?$/);
+  if (match) {
+    return { baseType: match[1], length: match[2] || '' };
+  }
+  return { baseType: type, length: '' };
+}
 
 export function EditColumnDialog({
   open,
@@ -31,14 +40,17 @@ export function EditColumnDialog({
   onDelete,
 }: EditColumnDialogProps) {
   const [name, setName] = useState('');
-  const [type, setType] = useState('VARCHAR(255)');
+  const [baseType, setBaseType] = useState('VARCHAR');
+  const [typeLength, setTypeLength] = useState('');
   const [isPrimaryKey, setIsPrimaryKey] = useState(false);
-  const [isNullable, setIsNullable] = useState(true);
+  const [isNullable, setIsNullable] = useState(false);
 
   useEffect(() => {
     if (column) {
       setName(column.name);
-      setType(column.type);
+      const parsed = parseType(column.type);
+      setBaseType(parsed.baseType);
+      setTypeLength(parsed.length);
       setIsPrimaryKey(column.isPrimaryKey);
       setIsNullable(column.isNullable);
     }
@@ -46,10 +58,13 @@ export function EditColumnDialog({
 
   if (!column) return null;
 
+  const needsLength = TYPES_WITH_LENGTH.includes(baseType);
+  const fullType = needsLength && typeLength ? `${baseType}(${typeLength})` : baseType;
+
   const handleSave = () => {
     onSave({
       name: name.trim(),
-      type,
+      type: fullType,
       isPrimaryKey,
       isNullable,
     });
@@ -83,16 +98,31 @@ export function EditColumnDialog({
 
           <div className="space-y-2">
             <Label>Type</Label>
-            <Select value={type} onValueChange={setType}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {dataTypes.map((t) => (
-                  <SelectItem key={t} value={t}>{t}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex gap-2">
+              <Select value={baseType} onValueChange={setBaseType}>
+                <SelectTrigger className={needsLength ? 'flex-1' : 'w-full'}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {BASE_TYPES.map((t) => (
+                    <SelectItem key={t} value={t}>{t}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {needsLength && (
+                <Input
+                  className="w-24"
+                  placeholder="255"
+                  value={typeLength}
+                  onChange={(e) => setTypeLength(e.target.value.replace(/[^0-9,]/g, ''))}
+                />
+              )}
+            </div>
+            {needsLength && (
+              <p className="text-xs text-muted-foreground">
+                Type complet: {fullType}
+              </p>
+            )}
           </div>
 
           <div className="flex gap-6">

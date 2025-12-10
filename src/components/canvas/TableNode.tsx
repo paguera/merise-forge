@@ -1,39 +1,45 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { MLDTable } from '@/types/merise';
 import { useMeriseStore } from '@/hooks/useMeriseStore';
 
 interface TableNodeProps {
   table: MLDTable;
   showTypes: boolean;
+  scale?: number;
 }
 
-export function TableNode({ table, showTypes }: TableNodeProps) {
+const GRID_SIZE = 20;
+
+const snapToGrid = (value: number) => Math.round(value / GRID_SIZE) * GRID_SIZE;
+
+export function TableNode({ table, showTypes, scale = 1 }: TableNodeProps) {
   const { updateTablePosition } = useMeriseStore();
   const [isDragging, setIsDragging] = useState(false);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const nodeRef = useRef<HTMLDivElement>(null);
+  const startPosRef = useRef({ x: 0, y: 0 });
+  const tablePosRef = useRef({ x: table.position.x, y: table.position.y });
 
-  const handleMouseDown = (e: React.MouseEvent) => {
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (e.button !== 0) return;
     e.preventDefault();
+    e.stopPropagation();
+    
     setIsDragging(true);
-    setDragOffset({
-      x: e.clientX - table.position.x,
-      y: e.clientY - table.position.y,
-    });
-  };
+    startPosRef.current = { x: e.clientX, y: e.clientY };
+    tablePosRef.current = { x: table.position.x, y: table.position.y };
+  }, [table.position.x, table.position.y]);
 
   useEffect(() => {
     if (!isDragging) return;
 
     const handleMouseMove = (e: MouseEvent) => {
-      const parent = nodeRef.current?.closest('.canvas-bg');
-      if (!parent) return;
+      const dx = (e.clientX - startPosRef.current.x) / scale;
+      const dy = (e.clientY - startPosRef.current.y) / scale;
       
-      const rect = parent.getBoundingClientRect();
-      const x = Math.max(0, Math.min(e.clientX - dragOffset.x - rect.left, rect.width - 200));
-      const y = Math.max(0, Math.min(e.clientY - dragOffset.y - rect.top, rect.height - 100));
+      const newX = snapToGrid(Math.max(0, tablePosRef.current.x + dx));
+      const newY = snapToGrid(Math.max(0, tablePosRef.current.y + dy));
       
-      updateTablePosition(table.id, { x, y });
+      updateTablePosition(table.id, { x: newX, y: newY });
     };
 
     const handleMouseUp = () => {
@@ -47,7 +53,7 @@ export function TableNode({ table, showTypes }: TableNodeProps) {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging, dragOffset, table.id, updateTablePosition]);
+  }, [isDragging, table.id, scale, updateTablePosition]);
 
   const isJunction = table.isJunction;
 

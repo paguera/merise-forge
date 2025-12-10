@@ -23,7 +23,8 @@ interface EditEntityDialogProps {
   onRemoveAttribute: (attributeId: string) => void;
 }
 
-const dataTypes: Attribute['type'][] = ['INT', 'VARCHAR', 'TEXT', 'DATE', 'DATETIME', 'BOOLEAN', 'DECIMAL', 'FLOAT'];
+const BASE_TYPES: Attribute['type'][] = ['INT', 'VARCHAR', 'TEXT', 'DATE', 'DATETIME', 'BOOLEAN', 'DECIMAL', 'FLOAT'];
+const TYPES_WITH_LENGTH: Attribute['type'][] = ['VARCHAR', 'DECIMAL'];
 
 export function EditEntityDialog({
   open,
@@ -37,8 +38,9 @@ export function EditEntityDialog({
   const [entityName, setEntityName] = useState('');
   const [newAttrName, setNewAttrName] = useState('');
   const [newAttrType, setNewAttrType] = useState<Attribute['type']>('VARCHAR');
+  const [newAttrLength, setNewAttrLength] = useState('255');
   const [newAttrPK, setNewAttrPK] = useState(false);
-  const [newAttrNullable, setNewAttrNullable] = useState(true);
+  const [newAttrNullable, setNewAttrNullable] = useState(false);
 
   useEffect(() => {
     if (entity) {
@@ -48,6 +50,8 @@ export function EditEntityDialog({
 
   if (!entity) return null;
 
+  const needsLength = TYPES_WITH_LENGTH.includes(newAttrType);
+
   const handleSaveName = () => {
     if (entityName.trim() && entityName !== entity.name) {
       onSave({ name: entityName.trim() });
@@ -56,17 +60,20 @@ export function EditEntityDialog({
 
   const handleAddAttribute = () => {
     if (newAttrName.trim()) {
+      const length = needsLength && newAttrLength ? parseInt(newAttrLength) : undefined;
       onAddAttribute({
         id: `attr_${Date.now()}`,
         name: newAttrName.trim(),
         type: newAttrType,
         isPrimaryKey: newAttrPK,
         isNullable: newAttrNullable,
+        length,
       });
       setNewAttrName('');
       setNewAttrType('VARCHAR');
+      setNewAttrLength('255');
       setNewAttrPK(false);
-      setNewAttrNullable(true);
+      setNewAttrNullable(false);
     }
   };
 
@@ -114,15 +121,23 @@ export function EditEntityDialog({
                     value={attr.type}
                     onValueChange={(v) => onUpdateAttribute(attr.id, { type: v as Attribute['type'] })}
                   >
-                    <SelectTrigger className="w-32 h-8 text-xs">
+                    <SelectTrigger className="w-28 h-8 text-xs">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {dataTypes.map((type) => (
+                      {BASE_TYPES.map((type) => (
                         <SelectItem key={type} value={type}>{type}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+                  {TYPES_WITH_LENGTH.includes(attr.type) && (
+                    <Input
+                      value={attr.length || ''}
+                      onChange={(e) => onUpdateAttribute(attr.id, { length: parseInt(e.target.value) || undefined })}
+                      className="w-16 h-8 text-xs"
+                      placeholder="255"
+                    />
+                  )}
                   <div className="flex items-center gap-1">
                     <Checkbox
                       checked={attr.isPrimaryKey}
@@ -154,15 +169,23 @@ export function EditEntityDialog({
                 className="flex-1"
               />
               <Select value={newAttrType} onValueChange={(v) => setNewAttrType(v as Attribute['type'])}>
-                <SelectTrigger className="w-32">
+                <SelectTrigger className="w-28">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {dataTypes.map((type) => (
+                  {BASE_TYPES.map((type) => (
                     <SelectItem key={type} value={type}>{type}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              {needsLength && (
+                <Input
+                  value={newAttrLength}
+                  onChange={(e) => setNewAttrLength(e.target.value.replace(/[^0-9]/g, ''))}
+                  className="w-16"
+                  placeholder="255"
+                />
+              )}
             </div>
             <div className="flex items-center justify-between">
               <div className="flex gap-4">

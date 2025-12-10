@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useMeriseStore } from '@/hooks/useMeriseStore';
 import { Entity, Relation } from '@/types/merise';
 import { EditEntityDialog } from '@/components/dialogs/EditEntityDialog';
+import { EditRelationDialog } from '@/components/dialogs/EditRelationDialog';
 import { toast } from 'sonner';
 
 type CreationStep = 'entity1' | 'verb' | 'entity2' | 'cardinalities';

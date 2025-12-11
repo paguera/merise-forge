@@ -23,6 +23,8 @@ export function Header() {
   const parseSQLFile = (sql: string) => {
     const entities: Entity[] = [];
     const relations: Relation[] = [];
+    const foreignKeys: { fromTable: string; fromColumn: string; toTable: string; toColumn: string }[] = [];
+    const tableColumns: Map<string, string[]> = new Map();
     
     // Parse CREATE TABLE statements
     const tableRegex = /CREATE TABLE\s+`?(\w+)`?\s*\(([\s\S]*?)\)\s*(?:ENGINE|;)/gi;
@@ -34,13 +36,30 @@ export function Header() {
       const columnsSection = match[2];
       
       const attributes: Attribute[] = [];
-      const columnLines = columnsSection.split(',').map(l => l.trim()).filter(l => l && !l.startsWith('PRIMARY') && !l.startsWith('FOREIGN') && !l.startsWith('KEY') && !l.startsWith('CONSTRAINT'));
+      const fkColumns: string[] = [];
+      const lines = columnsSection.split(/,(?![^()]*\))/).map(l => l.trim());
+      
+      // Parse FK constraints
+      lines.forEach(line => {
+        const fkMatch = line.match(/FOREIGN\s+KEY\s*\(`?(\w+)`?\)\s*REFERENCES\s+`?(\w+)`?\s*\(`?(\w+)`?\)/i);
+        if (fkMatch) {
+          foreignKeys.push({
+            fromTable: tableName,
+            fromColumn: fkMatch[1],
+            toTable: fkMatch[2],
+            toColumn: fkMatch[3],
+          });
+          fkColumns.push(fkMatch[1]);
+        }
+      });
+      
+      const columnLines = lines.filter(l => l && !l.startsWith('PRIMARY') && !l.startsWith('FOREIGN') && !l.startsWith('KEY') && !l.startsWith('CONSTRAINT') && !l.startsWith('UNIQUE') && !l.startsWith('INDEX'));
       
       columnLines.forEach((line, idx) => {
         const colMatch = line.match(/`?(\w+)`?\s+(\w+(?:\(\d+(?:,\d+)?\))?)/i);
         if (colMatch) {
           attributes.push({
-            id: `attr_${Date.now()}_${idx}`,
+            id: `attr_${Date.now()}_${idx}_${Math.random().toString(36).substr(2,5)}`,
             name: colMatch[1],
             type: colMatch[2].toUpperCase() as Attribute['type'],
             isPrimaryKey: line.toUpperCase().includes('AUTO_INCREMENT') || colMatch[1].toLowerCase() === 'id',
@@ -49,9 +68,11 @@ export function Header() {
         }
       });
       
+      tableColumns.set(tableName, attributes.map(a => a.name));
+      
       if (attributes.length > 0) {
         entities.push({
-          id: `entity_${Date.now()}_${entities.length}`,
+          id: `entity_${Date.now()}_${entities.length}_${Math.random().toString(36).substr(2,5)}`,
           name: tableName,
           attributes,
           position: { x: 100 + (entities.length % 3) * 300, y: yPos },
@@ -60,7 +81,80 @@ export function Header() {
       }
     }
     
-    return { entities, relations };
+    // Parse ALTER TABLE FK statements
+    const alterFkRegex = /ALTER\s+TABLE\s+`?(\w+)`?[\s\S]*?FOREIGN\s+KEY\s*\(`?(\w+)`?\)\s*REFERENCES\s+`?(\w+)`?\s*\(`?(\w+)`?\)/gi;
+    while ((match = alterFkRegex.exec(sql)) !== null) {
+      foreignKeys.push({
+        fromTable: match[1],
+        fromColumn: match[2],
+        toTable: match[3],
+        toColumn: match[4],
+      });
+    }
+    
+    // Detect junction tables (tables with only FKs as primary attributes)
+    const junctionTables = new Set<string>();
+    entities.forEach(entity => {
+      const entityFKs = foreignKeys.filter(fk => fk.fromTable === entity.name);
+      if (entityFKs.length >= 2) {
+        const nonFKCols = entity.attributes.filter(a => 
+          !entityFKs.some(fk => fk.fromColumn === a.name) && !a.isPrimaryKey
+        );
+        if (nonFKCols.length === 0) {
+          junctionTables.add(entity.name);
+        }
+      }
+    });
+    
+    // Create relations from FKs
+    foreignKeys.forEach((fk, idx) => {
+      const fromEntity = entities.find(e => e.name === fk.fromTable);
+      const toEntity = entities.find(e => e.name === fk.toTable);
+      
+      if (fromEntity && toEntity && !junctionTables.has(fk.fromTable)) {
+        relations.push({
+          id: `rel_${Date.now()}_${idx}`,
+          name: `${fk.fromColumn.replace(/_?id$/i, '')}`,
+          entity1Id: fromEntity.id,
+          entity2Id: toEntity.id,
+          cardinality1: '0,n',
+          cardinality2: '1,1',
+          position: {
+            x: (fromEntity.position.x + toEntity.position.x) / 2,
+            y: (fromEntity.position.y + toEntity.position.y) / 2,
+          },
+        });
+      }
+    });
+    
+    // Create N-M relations from junction tables
+    junctionTables.forEach(junctionName => {
+      const junctionFKs = foreignKeys.filter(fk => fk.fromTable === junctionName);
+      if (junctionFKs.length >= 2) {
+        const entity1 = entities.find(e => e.name === junctionFKs[0].toTable);
+        const entity2 = entities.find(e => e.name === junctionFKs[1].toTable);
+        
+        if (entity1 && entity2) {
+          relations.push({
+            id: `rel_junction_${Date.now()}`,
+            name: junctionName,
+            entity1Id: entity1.id,
+            entity2Id: entity2.id,
+            cardinality1: '0,n',
+            cardinality2: '0,n',
+            position: {
+              x: (entity1.position.x + entity2.position.x) / 2,
+              y: (entity1.position.y + entity2.position.y) / 2,
+            },
+          });
+        }
+      }
+    });
+    
+    // Remove junction tables from entities list
+    const filteredEntities = entities.filter(e => !junctionTables.has(e.name));
+    
+    return { entities: filteredEntities, relations };
   };
 
   const handleImportSQL = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -70,7 +164,7 @@ export function Header() {
     const reader = new FileReader();
     reader.onload = (e) => {
       const sql = e.target?.result as string;
-      const { entities } = parseSQLFile(sql);
+      const { entities, relations } = parseSQLFile(sql);
       
       if (entities.length === 0) {
         toast.error('Aucune table trouvée dans le fichier SQL');
@@ -78,7 +172,8 @@ export function Header() {
       }
       
       entities.forEach(entity => addEntity(entity));
-      toast.success(`${entities.length} tables importées`);
+      relations.forEach(relation => addRelation(relation));
+      toast.success(`${entities.length} tables et ${relations.length} relations importées`);
     };
     reader.readAsText(file);
     if (fileInputRef.current) fileInputRef.current.value = '';

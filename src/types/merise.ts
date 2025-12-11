@@ -38,6 +38,8 @@ export interface MLDTable {
   position: { x: number; y: number };
 }
 
+export type OnDeleteAction = 'CASCADE' | 'SET NULL' | 'RESTRICT' | 'NO ACTION' | 'SET DEFAULT';
+
 export interface MLDColumn {
   id: string;
   name: string;
@@ -49,6 +51,7 @@ export interface MLDColumn {
     column: string;
   };
   isNullable: boolean;
+  onDelete?: OnDeleteAction;
 }
 
 export interface MLDRelation {

@@ -109,12 +109,12 @@ export function MPDSidebar() {
         </div>
 
         {/* SQL Preview */}
-        <div className="bg-secondary/50 rounded-lg p-5 space-y-3 flex-1 flex flex-col min-h-0">
+        <div className="bg-secondary/50 rounded-lg p-5 space-y-3 flex-1 flex flex-col">
           <h3 className="font-semibold text-foreground">Aperçu SQL ({sqlDialect})</h3>
           <textarea
             readOnly
             value={generatedSQL || '-- Aucun SQL généré'}
-            className="flex-1 w-full bg-foreground text-background rounded-lg p-4 text-xs font-mono resize-none border-0 focus:outline-none focus:ring-2 focus:ring-primary min-h-[200px]"
+            className="w-full bg-foreground text-background rounded-lg p-4 text-xs font-mono resize-none border-0 focus:outline-none focus:ring-2 focus:ring-primary min-h-[400px] h-[50vh]"
           />
         </div>
       </div>
@@ -134,7 +134,7 @@ export function MPDSidebar() {
             updateColumnInTable(currentTable.id, editingColumn.id, updates);
           }
         }}
-        onDelete={() => {
+        onDeleteColumn={() => {
           if (editingColumn && currentTable) {
             removeColumnFromTable(currentTable.id, editingColumn.id);
           }

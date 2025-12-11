@@ -35,8 +35,9 @@ const getCardinalityExplanation = (cardinality: string, isRequired: boolean) => 
 };
 
 export function MCDSidebar() {
-  const { model, addEntity, addRelation, removeEntity, updateEntity, addAttribute, updateAttribute, removeAttribute, resetModel } = useMeriseStore();
+  const { model, addEntity, addRelation, removeEntity, updateEntity, addAttribute, updateAttribute, removeAttribute, updateRelation, removeRelation, resetModel } = useMeriseStore();
   const [editingEntity, setEditingEntity] = useState<Entity | null>(null);
+  const [editingRelation, setEditingRelation] = useState<Relation | null>(null);
   const [step, setStep] = useState<CreationStep>('entity1');
   const [isNewEntity1, setIsNewEntity1] = useState(true);
   const [isNewEntity2, setIsNewEntity2] = useState(true);
@@ -428,8 +429,20 @@ export function MCDSidebar() {
                 const e1 = model.entities.find(e => e.id === relation.entity1Id);
                 const e2 = model.entities.find(e => e.id === relation.entity2Id);
                 return (
-                  <Badge key={relation.id} variant="outline" className="px-3 py-1">
+                  <Badge key={relation.id} variant="outline" className="px-3 py-1 gap-2">
                     {e1?.name} — {relation.name} — {e2?.name}
+                    <button 
+                      onClick={() => setEditingRelation(relation)}
+                      className="hover:text-primary transition-colors"
+                    >
+                      <Pencil className="w-3 h-3" />
+                    </button>
+                    <button 
+                      onClick={() => removeRelation(relation.id)}
+                      className="hover:text-destructive transition-colors"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
                   </Badge>
                 );
               })}
@@ -449,6 +462,14 @@ export function MCDSidebar() {
         onAddAttribute={(attr) => editingEntity && addAttribute(editingEntity.id, attr)}
         onUpdateAttribute={(attrId, updates) => editingEntity && updateAttribute(editingEntity.id, attrId, updates)}
         onRemoveAttribute={(attrId) => editingEntity && removeAttribute(editingEntity.id, attrId)}
+      />
+
+      <EditRelationDialog
+        open={!!editingRelation}
+        onOpenChange={(open) => !open && setEditingRelation(null)}
+        relation={editingRelation}
+        onSave={(updates) => editingRelation && updateRelation(editingRelation.id, updates)}
+        onDelete={() => editingRelation && removeRelation(editingRelation.id)}
       />
     </div>
   );

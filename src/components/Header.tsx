@@ -1,11 +1,11 @@
-import { useState } from 'react';
-import { Database, Download, Moon, Sun, Info, Save, FolderOpen, Archive } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Database, Download, Moon, Sun, Info, Save, FolderOpen, Archive, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useMeriseStore } from '@/hooks/useMeriseStore';
 import { useTheme } from '@/hooks/useTheme';
-import { ViewMode, SQLDialect } from '@/types/merise';
+import { ViewMode, SQLDialect, Entity, Relation, Attribute } from '@/types/merise';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { SaveProjectDialog } from '@/components/dialogs/SaveProjectDialog';
@@ -14,10 +14,75 @@ import JSZip from 'jszip';
 
 export function Header() {
   const navigate = useNavigate();
-  const { viewMode, setViewMode, sqlDialect, setSqlDialect, generatedSQL, mldModel } = useMeriseStore();
+  const { viewMode, setViewMode, sqlDialect, setSqlDialect, generatedSQL, mldModel, model, addEntity, addRelation } = useMeriseStore();
   const { theme, toggleTheme } = useTheme();
   const [saveOpen, setSaveOpen] = useState(false);
   const [loadOpen, setLoadOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const parseSQLFile = (sql: string) => {
+    const entities: Entity[] = [];
+    const relations: Relation[] = [];
+    
+    // Parse CREATE TABLE statements
+    const tableRegex = /CREATE TABLE\s+`?(\w+)`?\s*\(([\s\S]*?)\)\s*(?:ENGINE|;)/gi;
+    let match;
+    let yPos = 100;
+    
+    while ((match = tableRegex.exec(sql)) !== null) {
+      const tableName = match[1];
+      const columnsSection = match[2];
+      
+      const attributes: Attribute[] = [];
+      const columnLines = columnsSection.split(',').map(l => l.trim()).filter(l => l && !l.startsWith('PRIMARY') && !l.startsWith('FOREIGN') && !l.startsWith('KEY') && !l.startsWith('CONSTRAINT'));
+      
+      columnLines.forEach((line, idx) => {
+        const colMatch = line.match(/`?(\w+)`?\s+(\w+(?:\(\d+(?:,\d+)?\))?)/i);
+        if (colMatch) {
+          attributes.push({
+            id: `attr_${Date.now()}_${idx}`,
+            name: colMatch[1],
+            type: colMatch[2].toUpperCase() as Attribute['type'],
+            isPrimaryKey: line.toUpperCase().includes('AUTO_INCREMENT') || colMatch[1].toLowerCase() === 'id',
+            isNullable: !line.toUpperCase().includes('NOT NULL'),
+          });
+        }
+      });
+      
+      if (attributes.length > 0) {
+        entities.push({
+          id: `entity_${Date.now()}_${entities.length}`,
+          name: tableName,
+          attributes,
+          position: { x: 100 + (entities.length % 3) * 300, y: yPos },
+        });
+        if ((entities.length) % 3 === 0) yPos += 200;
+      }
+    }
+    
+    return { entities, relations };
+  };
+
+  const handleImportSQL = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const sql = e.target?.result as string;
+      const { entities } = parseSQLFile(sql);
+      
+      if (entities.length === 0) {
+        toast.error('Aucune table trouvée dans le fichier SQL');
+        return;
+      }
+      
+      entities.forEach(entity => addEntity(entity));
+      toast.success(`${entities.length} tables importées`);
+    };
+    reader.readAsText(file);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
 
   const getSavedProjects = () => {
     const projects: { name: string; savedAt: string }[] = [];
@@ -134,6 +199,16 @@ export function Header() {
           </Select>
         )}
         
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleImportSQL}
+          accept=".sql"
+          className="hidden"
+        />
+        <Button variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} title="Importer SQL">
+          <Upload className="w-5 h-5" />
+        </Button>
         <Button variant="ghost" size="icon" onClick={() => setSaveOpen(true)} title="Sauvegarder">
           <Save className="w-5 h-5" />
         </Button>

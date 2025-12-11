@@ -109,12 +109,12 @@ export function MPDSidebar() {
         </div>
 
         {/* SQL Preview */}
-        <div className="bg-secondary/50 rounded-lg p-5 space-y-3">
+        <div className="bg-secondary/50 rounded-lg p-5 space-y-3 flex-1 flex flex-col min-h-0">
           <h3 className="font-semibold text-foreground">Aperçu SQL ({sqlDialect})</h3>
           <textarea
             readOnly
             value={generatedSQL || '-- Aucun SQL généré'}
-            className="w-full bg-foreground text-background rounded-lg p-4 text-xs font-mono resize-y min-h-32 max-h-96 border-0 focus:outline-none focus:ring-2 focus:ring-primary"
+            className="flex-1 w-full bg-foreground text-background rounded-lg p-4 text-xs font-mono resize-none border-0 focus:outline-none focus:ring-2 focus:ring-primary min-h-[200px]"
           />
         </div>
       </div>

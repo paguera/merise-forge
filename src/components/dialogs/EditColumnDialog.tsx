@@ -11,18 +11,19 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { MLDColumn } from '@/types/merise';
+import { MLDColumn, OnDeleteAction } from '@/types/merise';
 
 interface EditColumnDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   column: MLDColumn | null;
   onSave: (updates: Partial<MLDColumn>) => void;
-  onDelete: () => void;
+  onDeleteColumn: () => void;
 }
 
 const BASE_TYPES = ['INT', 'VARCHAR', 'TEXT', 'DATE', 'DATETIME', 'BOOLEAN', 'DECIMAL', 'FLOAT'];
 const TYPES_WITH_LENGTH = ['VARCHAR', 'DECIMAL'];
+const ON_DELETE_ACTIONS: OnDeleteAction[] = ['CASCADE', 'SET NULL', 'RESTRICT', 'NO ACTION', 'SET DEFAULT'];
 
 function parseType(type: string): { baseType: string; length: string } {
   const match = type.match(/^(\w+)(?:\(([^)]+)\))?$/);
@@ -37,13 +38,14 @@ export function EditColumnDialog({
   onOpenChange,
   column,
   onSave,
-  onDelete,
+  onDeleteColumn,
 }: EditColumnDialogProps) {
   const [name, setName] = useState('');
   const [baseType, setBaseType] = useState('VARCHAR');
   const [typeLength, setTypeLength] = useState('');
   const [isPrimaryKey, setIsPrimaryKey] = useState(false);
   const [isNullable, setIsNullable] = useState(false);
+  const [onDeleteAction, setOnDeleteAction] = useState<OnDeleteAction>('CASCADE');
 
   useEffect(() => {
     if (column) {
@@ -53,6 +55,7 @@ export function EditColumnDialog({
       setTypeLength(parsed.length);
       setIsPrimaryKey(column.isPrimaryKey);
       setIsNullable(column.isNullable);
+      setOnDeleteAction(column.onDelete || 'CASCADE');
     }
   }, [column]);
 
@@ -67,12 +70,13 @@ export function EditColumnDialog({
       type: fullType,
       isPrimaryKey,
       isNullable,
+      onDelete: column.isForeignKey ? onDeleteAction : undefined,
     });
     onOpenChange(false);
   };
 
   const handleDelete = () => {
-    onDelete();
+    onDeleteColumn();
     onOpenChange(false);
   };
 
@@ -146,9 +150,24 @@ export function EditColumnDialog({
           </div>
 
           {column.isForeignKey && (
-            <p className="text-xs text-muted-foreground bg-fk/10 p-2 rounded">
-              Cette colonne est une clé étrangère et ne peut pas être convertie en clé primaire.
-            </p>
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label>Action ON DELETE</Label>
+                <Select value={onDeleteAction} onValueChange={(v) => setOnDeleteAction(v as OnDeleteAction)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ON_DELETE_ACTIONS.map((action) => (
+                      <SelectItem key={action} value={action}>{action}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <p className="text-xs text-muted-foreground bg-fk/10 p-2 rounded">
+                Cette colonne est une clé étrangère et ne peut pas être convertie en clé primaire.
+              </p>
+            </div>
           )}
 
           <div className="flex gap-2 pt-4">

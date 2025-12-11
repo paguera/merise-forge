@@ -32,6 +32,7 @@ export function generateSQL(model: MLDModel, dialect: SQLDialect): string {
           column: column.name,
           refTable: column.references.table,
           refColumn: column.references.column,
+          onDelete: column.onDelete || 'CASCADE',
         } as any);
       }
     });
@@ -52,7 +53,8 @@ export function generateSQL(model: MLDModel, dialect: SQLDialect): string {
 
     // Generate foreign key statements
     foreignKeys.forEach((fk: any) => {
-      const fkStatement = `ALTER TABLE \`${table.name}\`\n  ADD CONSTRAINT \`fk_${table.name}_${fk.column}\`\n  FOREIGN KEY (\`${fk.column}\`)\n  REFERENCES \`${fk.refTable}\`(\`${fk.refColumn}\`)\n  ON DELETE CASCADE\n  ON UPDATE CASCADE;`;
+      const onDelete = fk.onDelete || 'CASCADE';
+      const fkStatement = `ALTER TABLE \`${table.name}\`\n  ADD CONSTRAINT \`fk_${table.name}_${fk.column}\`\n  FOREIGN KEY (\`${fk.column}\`)\n  REFERENCES \`${fk.refTable}\`(\`${fk.refColumn}\`)\n  ON DELETE ${onDelete}\n  ON UPDATE CASCADE;`;
       foreignKeyStatements.push(fkStatement);
     });
   });

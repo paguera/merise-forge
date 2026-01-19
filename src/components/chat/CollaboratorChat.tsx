@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect, KeyboardEvent } from 'react';
-import { MessageCircle, Send, X, Minimize2, Maximize2, Smile } from 'lucide-react';
+import { useState, useRef, useEffect, KeyboardEvent, Fragment } from 'react';
+import { MessageCircle, Send, X, Minimize2, Maximize2, Smile, Volume2, VolumeX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useRealtimeChat, ChatMessage, ChatReaction } from '@/hooks/useRealtimeChat';
 import { cn } from '@/lib/utils';
+import { getMuted, setMuted } from '@/lib/notificationSound';
 
 const EMOJI_OPTIONS = ['👍', '❤️', '😂', '😮', '😢', '🎉'];
 
@@ -22,10 +23,17 @@ export function CollaboratorChat({ projectId, username, userColor, connected }: 
   const [isMinimized, setIsMinimized] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [unreadCount, setUnreadCount] = useState(0);
+  const [isSoundMuted, setIsSoundMuted] = useState(() => getMuted());
   const scrollRef = useRef<HTMLDivElement>(null);
   const prevMessagesLength = useRef(0);
 
   const { messages, loading, sendMessage, toggleReaction, getReactionsForMessage } = useRealtimeChat(projectId, username, userColor);
+
+  const handleToggleMute = () => {
+    const newMuted = !isSoundMuted;
+    setIsSoundMuted(newMuted);
+    setMuted(newMuted);
+  };
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -136,6 +144,15 @@ export function CollaboratorChat({ projectId, username, userColor, connected }: 
                 variant="ghost"
                 size="icon"
                 className="h-7 w-7 text-primary-foreground hover:bg-primary-foreground/20"
+                onClick={handleToggleMute}
+                title={isSoundMuted ? "Activer les sons" : "Couper les sons"}
+              >
+                {isSoundMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-primary-foreground hover:bg-primary-foreground/20"
                 onClick={() => setIsMinimized(!isMinimized)}
               >
                 {isMinimized ? <Maximize2 className="w-4 h-4" /> : <Minimize2 className="w-4 h-4" />}
@@ -234,6 +251,47 @@ function MessageBubble({ message, isOwn, formatTime, reactions, onToggleReaction
     return acc;
   }, {} as Record<string, { count: number; users: string[]; hasCurrentUser: boolean }>);
 
+  // Parse message to highlight mentions
+  const renderMessageWithMentions = (text: string) => {
+    const mentionRegex = /@(\w+)/g;
+    const parts: (string | JSX.Element)[] = [];
+    let lastIndex = 0;
+    let match;
+
+    while ((match = mentionRegex.exec(text)) !== null) {
+      // Add text before the mention
+      if (match.index > lastIndex) {
+        parts.push(text.substring(lastIndex, match.index));
+      }
+      
+      // Add the mention with highlighting
+      const mentionedUser = match[1];
+      const isCurrentUser = mentionedUser.toLowerCase() === currentUsername.toLowerCase();
+      parts.push(
+        <span 
+          key={match.index} 
+          className={cn(
+            "font-semibold px-0.5 rounded",
+            isCurrentUser 
+              ? "bg-accent/30 text-accent" 
+              : "text-primary"
+          )}
+        >
+          @{mentionedUser}
+        </span>
+      );
+      
+      lastIndex = match.index + match[0].length;
+    }
+    
+    // Add remaining text
+    if (lastIndex < text.length) {
+      parts.push(text.substring(lastIndex));
+    }
+    
+    return parts.length > 0 ? parts : text;
+  };
+
   return (
     <div className={cn("flex flex-col gap-1 group", isOwn ? "items-end" : "items-start")}>
       <div className="flex items-center gap-2">
@@ -260,7 +318,7 @@ function MessageBubble({ message, isOwn, formatTime, reactions, onToggleReaction
           )}
           style={!isOwn ? { borderLeft: `3px solid ${message.color}` } : undefined}
         >
-          {message.message}
+          {renderMessageWithMentions(message.message)}
         </div>
 
         {/* Reaction button */}

@@ -6,9 +6,13 @@ import { MCDCanvas } from '@/components/canvas/MCDCanvas';
 import { MLDCanvas } from '@/components/canvas/MLDCanvas';
 import { MPDCanvas } from '@/components/canvas/MPDCanvas';
 import { useMeriseStore } from '@/hooks/useMeriseStore';
+import { useRealtimeProject } from '@/hooks/useRealtimeProject';
 
 const Index = () => {
   const { viewMode } = useMeriseStore();
+  const { users, updateCursor, connected } = useRealtimeProject();
+
+  const handleCursorMove = connected ? updateCursor : undefined;
 
   return (
     <div className="h-screen flex flex-col bg-background overflow-hidden">
@@ -19,9 +23,9 @@ const Index = () => {
         {viewMode === 'MLD' && <MLDSidebar />}
         {viewMode === 'MPD' && <MPDSidebar />}
         
-        {viewMode === 'MCD' && <MCDCanvas />}
-        {viewMode === 'MLD' && <MLDCanvas />}
-        {viewMode === 'MPD' && <MPDCanvas />}
+        {viewMode === 'MCD' && <MCDCanvas users={users} onCursorMove={handleCursorMove} />}
+        {viewMode === 'MLD' && <MLDCanvas users={users} onCursorMove={handleCursorMove} />}
+        {viewMode === 'MPD' && <MPDCanvas users={users} onCursorMove={handleCursorMove} />}
       </div>
     </div>
   );

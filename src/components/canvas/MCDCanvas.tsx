@@ -1,12 +1,19 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useMeriseStore } from '@/hooks/useMeriseStore';
 import { EntityNode } from './EntityNode';
 import { RelationNode } from './RelationNode';
 import { ConnectionLine } from './ConnectionLine';
 import { ZoomControls } from './ZoomControls';
+import { CollaboratorCursors } from './CollaboratorCursors';
 import { useCanvasZoom } from '@/hooks/useCanvasZoom';
+import type { PresenceUser } from '@/hooks/useRealtimePresence';
 
-export function MCDCanvas() {
+interface Props {
+  users?: PresenceUser[];
+  onCursorMove?: (x: number, y: number) => void;
+}
+
+export function MCDCanvas({ users = [], onCursorMove }: Props) {
   const { model } = useMeriseStore();
   const canvasRef = useRef<HTMLDivElement>(null);
   const { scale, position, zoomIn, zoomOut, resetZoom, handleWheel, startPan, movePan, endPan, isPanning } = useCanvasZoom();
@@ -19,13 +26,20 @@ export function MCDCanvas() {
     }
   }, [handleWheel]);
 
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    movePan(e);
+    if (onCursorMove) {
+      onCursorMove(e.clientX, e.clientY);
+    }
+  }, [movePan, onCursorMove]);
+
   return (
     <div 
       id="merise-canvas" 
       className="flex-1 canvas-bg relative overflow-hidden min-h-[600px]"
       ref={canvasRef}
       onMouseDown={startPan}
-      onMouseMove={movePan}
+      onMouseMove={handleMouseMove}
       onMouseUp={endPan}
       onMouseLeave={endPan}
       style={{ cursor: isPanning ? 'grabbing' : 'default' }}
@@ -82,6 +96,7 @@ export function MCDCanvas() {
       )}
 
       <ZoomControls scale={scale} onZoomIn={zoomIn} onZoomOut={zoomOut} onReset={resetZoom} />
+      <CollaboratorCursors users={users} />
     </div>
   );
 }

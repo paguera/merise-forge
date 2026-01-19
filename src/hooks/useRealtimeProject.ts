@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useMeriseStore } from './useMeriseStore';
 import { toast } from 'sonner';
 import type { MeriseModel, MLDModel, SQLDialect } from '@/types/merise';
+import { useRealtimePresence, PresenceUser } from './useRealtimePresence';
 
 interface ProjectData {
   model?: MeriseModel;
@@ -14,13 +15,45 @@ interface ProjectData {
 export function useRealtimeProject() {
   const [projectId, setProjectId] = useState<string | null>(null);
   const [projectName, setProjectName] = useState<string>('');
+  const [username, setUsername] = useState<string>('');
   const [syncing, setSyncing] = useState(false);
   const [connected, setConnected] = useState(false);
   const ignoreNextRemote = useRef(false);
+  const autoSyncEnabled = useRef(true);
+
+  // Presence hook
+  const presence = useRealtimePresence(projectId, username);
+
+  // Auto-sync: subscribe to store changes and push automatically
+  useEffect(() => {
+    if (!projectId || !connected) return;
+
+    const unsubscribe = useMeriseStore.subscribe((state, prevState) => {
+      if (!autoSyncEnabled.current) return;
+      
+      // Check if relevant state changed
+      const changed = 
+        JSON.stringify(state.model) !== JSON.stringify(prevState.model) ||
+        JSON.stringify(state.mldModel) !== JSON.stringify(prevState.mldModel) ||
+        state.sqlDialect !== prevState.sqlDialect ||
+        state.generatedSQL !== prevState.generatedSQL;
+
+      if (changed) {
+        // Debounce auto-sync
+        const timeout = setTimeout(() => {
+          pushStateInternal();
+        }, 500);
+        return () => clearTimeout(timeout);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [projectId, connected]);
 
   // Join an existing project or create a new one
-  const joinProject = useCallback(async (name: string) => {
+  const joinProject = useCallback(async (name: string, user: string) => {
     setSyncing(true);
+    setUsername(user);
     try {
       // Check if project exists
       const { data: existing } = await supabase
@@ -36,13 +69,15 @@ export function useRealtimeProject() {
         pid = existing.id;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const projectData = existing.data as any as ProjectData;
+        autoSyncEnabled.current = false;
         useMeriseStore.setState({
           model: projectData?.model ?? { entities: [], relations: [] },
           mldModel: projectData?.mldModel ?? null,
           sqlDialect: projectData?.sqlDialect ?? 'MariaDB',
           generatedSQL: projectData?.generatedSQL ?? '',
         });
-        toast.success(`Rejoint le projet "${name}"`);
+        setTimeout(() => { autoSyncEnabled.current = true; }, 100);
+        toast.success(`Rejoint le projet "${name}" en tant que ${user}`);
       } else {
         const currentState = useMeriseStore.getState();
         const payloadObj = JSON.parse(JSON.stringify({
@@ -59,7 +94,7 @@ export function useRealtimeProject() {
 
         if (error || !created) throw error;
         pid = created.id;
-        toast.success(`Projet "${name}" créé`);
+        toast.success(`Projet "${name}" créé par ${user}`);
       }
 
       setProjectId(pid);
@@ -73,8 +108,8 @@ export function useRealtimeProject() {
     }
   }, []);
 
-  // Push local state to DB
-  const pushState = useCallback(async () => {
+  // Push local state to DB (internal, silent)
+  const pushStateInternal = useCallback(async () => {
     if (!projectId) return;
     ignoreNextRemote.current = true;
     const s = useMeriseStore.getState();
@@ -89,6 +124,12 @@ export function useRealtimeProject() {
       .update({ data: payloadObj })
       .eq('id', projectId);
   }, [projectId]);
+
+  // Push local state to DB (manual with toast)
+  const pushState = useCallback(async () => {
+    await pushStateInternal();
+    toast.success('Modifications synchronisées');
+  }, [pushStateInternal]);
 
   // Subscribe to changes
   useEffect(() => {
@@ -112,12 +153,14 @@ export function useRealtimeProject() {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const row = payload.new as any;
           const newData = row?.data as ProjectData | undefined;
+          autoSyncEnabled.current = false;
           useMeriseStore.setState({
             model: newData?.model ?? { entities: [], relations: [] },
             mldModel: newData?.mldModel ?? null,
             sqlDialect: newData?.sqlDialect ?? 'MariaDB',
             generatedSQL: newData?.generatedSQL ?? '',
           });
+          setTimeout(() => { autoSyncEnabled.current = true; }, 100);
         }
       )
       .subscribe();
@@ -131,9 +174,23 @@ export function useRealtimeProject() {
   const leaveProject = useCallback(() => {
     setProjectId(null);
     setProjectName('');
+    setUsername('');
     setConnected(false);
     toast.info('Déconnecté du projet partagé');
   }, []);
 
-  return { projectId, projectName, connected, syncing, joinProject, pushState, leaveProject };
+  return { 
+    projectId, 
+    projectName, 
+    username,
+    connected, 
+    syncing, 
+    joinProject, 
+    pushState, 
+    leaveProject,
+    // Presence
+    users: presence.users as PresenceUser[],
+    myColor: presence.myColor,
+    updateCursor: presence.updateCursor,
+  };
 }

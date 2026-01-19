@@ -105,21 +105,56 @@ export function CollaborationDialog({
                 <Users className="w-4 h-4" />
                 Collaborateurs en ligne ({allUsers.length})
               </h4>
-              <div className="flex flex-wrap gap-2">
-                {allUsers.map((u) => (
-                  <Badge 
-                    key={u.id} 
-                    variant="outline" 
-                    className="flex items-center gap-2 py-1.5 px-3"
-                    style={{ borderColor: u.color }}
-                  >
-                    <Circle 
-                      className="w-2 h-2 fill-current animate-pulse" 
-                      style={{ color: u.color }} 
-                    />
-                    {u.username}
-                  </Badge>
-                ))}
+              <div className="space-y-2">
+                {allUsers.map((u) => {
+                  const isMe = u.id === 'me';
+                  const lastSeenText = !isMe && u.lastSeen 
+                    ? `Actif il y a ${Math.max(0, Math.round((Date.now() - u.lastSeen) / 1000))}s`
+                    : 'En ligne';
+                  
+                  return (
+                    <div 
+                      key={u.id}
+                      className="flex items-center gap-3 p-2 rounded-lg bg-background/50 border border-border/50"
+                    >
+                      {/* Avatar avec couleur */}
+                      <div 
+                        className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm shrink-0"
+                        style={{ backgroundColor: u.color }}
+                      >
+                        {u.username.charAt(0).toUpperCase()}
+                      </div>
+                      
+                      {/* Info utilisateur */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-foreground truncate">
+                            {u.username}
+                          </span>
+                          {isMe && (
+                            <Badge variant="secondary" className="text-xs shrink-0">
+                              Vous
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <Circle 
+                            className="w-2 h-2 fill-current animate-pulse" 
+                            style={{ color: u.color }} 
+                          />
+                          {lastSeenText}
+                        </div>
+                      </div>
+                      
+                      {/* Indicateur de curseur */}
+                      {u.cursor && (
+                        <div className="text-xs text-muted-foreground bg-secondary px-2 py-1 rounded">
+                          x:{Math.round(u.cursor.x)} y:{Math.round(u.cursor.y)}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
             <p className="text-sm text-muted-foreground flex items-center gap-2">

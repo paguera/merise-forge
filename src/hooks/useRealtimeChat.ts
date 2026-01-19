@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { playNotificationSound } from '@/lib/notificationSound';
+import { playNotificationSound, getMuted } from '@/lib/notificationSound';
+import { toast } from 'sonner';
 
 export interface ChatMessage {
   id: string;
@@ -17,6 +18,13 @@ export interface ChatReaction {
   username: string;
   emoji: string;
   created_at: string;
+}
+
+// Check if message contains a mention of the current user
+function containsMention(message: string, username: string): boolean {
+  if (!username) return false;
+  const mentionPattern = new RegExp(`@${username.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+  return mentionPattern.test(message);
 }
 
 export function useRealtimeChat(projectId: string | null, username: string, userColor: string) {
@@ -84,9 +92,29 @@ export function useRealtimeChat(projectId: string | null, username: string, user
           const newMessage = payload.new as ChatMessage;
           setMessages((prev) => [...prev, newMessage]);
           
-          // Play sound only for messages from others, after initial load
+          // Handle notifications for messages from others, after initial load
           if (initialLoadDone.current && newMessage.username !== username) {
-            playNotificationSound('message');
+            const isMentioned = containsMention(newMessage.message, username);
+            
+            if (isMentioned) {
+              // Special notification for mentions
+              playNotificationSound('mention');
+              if (!getMuted()) {
+                toast.info(`${newMessage.username} vous a mentionné`, {
+                  description: newMessage.message.substring(0, 50) + (newMessage.message.length > 50 ? '...' : ''),
+                  duration: 5000,
+                });
+              }
+            } else {
+              // Regular message notification
+              playNotificationSound('message');
+              if (!getMuted()) {
+                toast(`💬 ${newMessage.username}`, {
+                  description: newMessage.message.substring(0, 50) + (newMessage.message.length > 50 ? '...' : ''),
+                  duration: 3000,
+                });
+              }
+            }
           }
         }
       )

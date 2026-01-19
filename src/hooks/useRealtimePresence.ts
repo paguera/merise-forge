@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { playNotificationSound } from '@/lib/notificationSound';
+import { playNotificationSound, getMuted } from '@/lib/notificationSound';
+import { toast } from 'sonner';
 
 interface CursorPosition {
   x: number;
@@ -81,16 +82,29 @@ export function useRealtimePresence(projectId: string | null, username: string) 
         initialSyncDone.current = true;
       })
       .on('presence', { event: 'join' }, ({ newPresences }) => {
-        // Play sound when someone joins (after initial sync)
+        // Play sound and show toast when someone joins (after initial sync)
         if (initialSyncDone.current && newPresences.length > 0) {
           const joiner = newPresences[0] as unknown as PresenceUser;
           if (joiner.id !== myUserId) {
             playNotificationSound('join');
+            if (!getMuted()) {
+              toast.success(`${joiner.username} a rejoint le projet`, {
+                duration: 3000,
+              });
+            }
           }
         }
       })
-      .on('presence', { event: 'leave' }, () => {
-        // User left
+      .on('presence', { event: 'leave' }, ({ leftPresences }) => {
+        // Show toast when someone leaves
+        if (initialSyncDone.current && leftPresences.length > 0) {
+          const leaver = leftPresences[0] as unknown as PresenceUser;
+          if (leaver.id !== myUserId && !getMuted()) {
+            toast.info(`${leaver.username} a quitté le projet`, {
+              duration: 3000,
+            });
+          }
+        }
       })
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {

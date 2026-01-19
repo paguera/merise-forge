@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Database, Moon, Sun, Info, Save, FolderOpen, Archive, Upload, Users } from 'lucide-react';
+import { Database, Moon, Sun, Info, Save, FolderOpen, Archive, Upload, Users, Music } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -21,7 +21,7 @@ interface HeaderProps {
 export function Header({ realtime }: HeaderProps) {
   const navigate = useNavigate();
   const { viewMode, setViewMode, sqlDialect, setSqlDialect, generatedSQL, mldModel, model, addEntity, addRelation } = useMeriseStore();
-  const { theme, toggleTheme } = useTheme();
+  const { theme, cycleTheme } = useTheme();
   const [saveOpen, setSaveOpen] = useState(false);
   const [loadOpen, setLoadOpen] = useState(false);
   const [collabOpen, setCollabOpen] = useState(false);
@@ -363,8 +363,8 @@ export function Header({ realtime }: HeaderProps) {
         <Button variant="ghost" size="icon" onClick={() => navigate('/info')} title="Info">
           <Info className="w-5 h-5" />
         </Button>
-        <Button variant="ghost" size="icon" onClick={toggleTheme}>
-          {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+        <Button variant="ghost" size="icon" onClick={cycleTheme} title={`Thème: ${theme}`}>
+          {theme === 'dark' ? <Sun className="w-5 h-5" /> : theme === 'spotify' ? <Music className="w-5 h-5 text-primary" /> : <Moon className="w-5 h-5" />}
         </Button>
         <Button
           variant={realtime.connected ? 'default' : 'ghost'}

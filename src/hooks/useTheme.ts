@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-type Theme = 'dark' | 'light';
+export type Theme = 'dark' | 'light' | 'spotify';
 
 export function useTheme() {
   const [theme, setTheme] = useState<Theme>(() => {
@@ -12,16 +12,24 @@ export function useTheme() {
     localStorage.setItem('merise-theme', theme);
     const root = document.documentElement;
     
+    // Remove all theme classes
+    root.classList.remove('dark', 'spotify');
+    
     if (theme === 'dark') {
       root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
+    } else if (theme === 'spotify') {
+      root.classList.add('spotify');
     }
+    // 'light' theme has no class (default)
   }, [theme]);
 
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+  const cycleTheme = () => {
+    setTheme((prev) => {
+      if (prev === 'light') return 'dark';
+      if (prev === 'dark') return 'spotify';
+      return 'light';
+    });
   };
 
-  return { theme, setTheme, toggleTheme };
+  return { theme, setTheme, cycleTheme };
 }

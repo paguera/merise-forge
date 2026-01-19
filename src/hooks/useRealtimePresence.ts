@@ -22,18 +22,31 @@ const COLORS = [
   '#6366f1', '#8b5cf6', '#a855f7', '#ec4899'
 ];
 
-function getRandomColor(): string {
-  return COLORS[Math.floor(Math.random() * COLORS.length)];
+function getRandomColor(username: string): string {
+  // Generate a consistent color based on username hash
+  let hash = 0;
+  for (let i = 0; i < username.length; i++) {
+    hash = username.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return COLORS[Math.abs(hash) % COLORS.length];
 }
 
-function generateUserId(): string {
-  return `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+function generateUserId(username: string): string {
+  // Generate a stable user ID based on username + a session identifier stored in sessionStorage
+  const sessionKey = 'merise_session_id';
+  let sessionId = sessionStorage.getItem(sessionKey);
+  if (!sessionId) {
+    sessionId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    sessionStorage.setItem(sessionKey, sessionId);
+  }
+  return `user_${username}_${sessionId}`;
 }
 
 export function useRealtimePresence(projectId: string | null, username: string) {
   const [users, setUsers] = useState<PresenceUser[]>([]);
-  const [myUserId] = useState(() => generateUserId());
-  const [myColor] = useState(() => getRandomColor());
+  // Use refs for stable identity - computed once based on username
+  const myUserId = useRef(generateUserId(username)).current;
+  const myColor = useRef(getRandomColor(username)).current;
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const cursorRef = useRef<CursorPosition | null>(null);
   const initialSyncDone = useRef(false);

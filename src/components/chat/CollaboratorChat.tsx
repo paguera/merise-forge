@@ -314,15 +314,20 @@ function MessageBubble({ message, isOwn, formatTime, reactions, onToggleReaction
         </span>
       </div>
       
-      <div className="relative">
+      <div className="relative max-w-[85%]">
         <div
           className={cn(
-            "px-3 py-2 rounded-2xl max-w-[85%] break-words text-sm",
+            "px-3 py-2 rounded-2xl text-sm whitespace-pre-wrap",
+            "min-w-0 w-full",
             isOwn
               ? "bg-primary text-primary-foreground rounded-br-md"
               : "bg-secondary text-secondary-foreground rounded-bl-md"
           )}
-          style={!isOwn ? { borderLeft: `3px solid ${message.color}` } : undefined}
+          style={{
+            ...((!isOwn ? { borderLeft: `3px solid ${message.color}` } : {})),
+            wordBreak: 'break-word',
+            overflowWrap: 'break-word',
+          }}
         >
           {renderMessageWithMentions(message.message)}
         </div>

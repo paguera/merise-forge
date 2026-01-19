@@ -11,13 +11,14 @@ import { useRealtimeProject } from '@/hooks/useRealtimeProject';
 
 const Index = () => {
   const { viewMode } = useMeriseStore();
-  const { users, updateCursor, connected, projectId, username, myColor } = useRealtimeProject();
+  const realtime = useRealtimeProject();
+  const { users, updateCursor, connected, projectId, username, myColor } = realtime;
 
   const handleCursorMove = connected ? updateCursor : undefined;
 
   return (
     <div className="h-screen flex flex-col bg-background overflow-hidden">
-      <Header />
+      <Header realtime={realtime} />
       
       <div className="flex-1 flex overflow-hidden">
         {viewMode === 'MCD' && <MCDSidebar />}

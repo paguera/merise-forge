@@ -67,18 +67,19 @@ export function CollaboratorChat({ projectId, username, userColor, connected }: 
     return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
   };
 
-  if (!connected) return null;
-
   return (
     <div className="fixed bottom-4 right-4 z-50">
       {!isOpen ? (
         <Button
           onClick={() => setIsOpen(true)}
-          className="rounded-full w-14 h-14 shadow-lg relative"
+          className={cn(
+            "rounded-full w-14 h-14 shadow-lg relative",
+            !connected && "opacity-80"
+          )}
           size="icon"
         >
           <MessageCircle className="w-6 h-6" />
-          {unreadCount > 0 && (
+          {connected && unreadCount > 0 && (
             <Badge 
               className="absolute -top-1 -right-1 min-w-[20px] h-5 flex items-center justify-center text-xs bg-destructive"
             >
@@ -86,6 +87,34 @@ export function CollaboratorChat({ projectId, username, userColor, connected }: 
             </Badge>
           )}
         </Button>
+      ) : !connected ? (
+        <div className="bg-card border border-border rounded-lg shadow-xl w-80 sm:w-96 overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 bg-primary text-primary-foreground">
+            <div className="flex items-center gap-2">
+              <MessageCircle className="w-4 h-4" />
+              <span className="font-medium text-sm">Chat collaboratif</span>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-primary-foreground hover:bg-primary-foreground/20"
+              onClick={() => setIsOpen(false)}
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+          <div className="p-6 text-center space-y-4">
+            <div className="w-16 h-16 mx-auto rounded-full bg-muted flex items-center justify-center">
+              <MessageCircle className="w-8 h-8 text-muted-foreground" />
+            </div>
+            <div className="space-y-2">
+              <h3 className="font-semibold text-foreground">Rejoignez un projet</h3>
+              <p className="text-sm text-muted-foreground">
+                Pour utiliser le chat collaboratif, rejoignez d'abord un projet partagé via le bouton "Collaboration" dans l'en-tête.
+              </p>
+            </div>
+          </div>
+        </div>
       ) : (
         <div 
           className={cn(

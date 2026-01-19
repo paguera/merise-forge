@@ -19,6 +19,7 @@ interface Props {
 }
 
 export function CollaboratorChat({ projectId, username, userColor, connected }: Props) {
+  // All hooks MUST be called unconditionally at the top, before any conditional returns
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [inputValue, setInputValue] = useState('');
@@ -26,8 +27,13 @@ export function CollaboratorChat({ projectId, username, userColor, connected }: 
   const [isSoundMuted, setIsSoundMuted] = useState(() => getMuted());
   const scrollRef = useRef<HTMLDivElement>(null);
   const prevMessagesLength = useRef(0);
-
-  const { messages, loading, sendMessage, toggleReaction, getReactionsForMessage } = useRealtimeChat(projectId, username, userColor);
+  
+  // Hook must be called unconditionally - pass null projectId when not connected
+  const { messages, loading, sendMessage, toggleReaction, getReactionsForMessage } = useRealtimeChat(
+    connected ? projectId : null, 
+    username, 
+    userColor
+  );
 
   const handleToggleMute = () => {
     const newMuted = !isSoundMuted;

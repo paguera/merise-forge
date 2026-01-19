@@ -10,7 +10,7 @@ interface ZoomControlsProps {
 
 export function ZoomControls({ scale, onZoomIn, onZoomOut, onReset }: ZoomControlsProps) {
   return (
-    <div className="absolute bottom-4 right-4 flex items-center gap-2 bg-card/90 backdrop-blur-sm border border-border rounded-lg p-2 shadow-lg z-50">
+    <div className="zoom-controls absolute bottom-4 right-4 flex items-center gap-2 bg-card/90 backdrop-blur-sm border border-border rounded-lg p-2 shadow-lg z-50">
       <Button variant="ghost" size="icon" onClick={onZoomOut} className="h-8 w-8">
         <ZoomOut className="w-4 h-4" />
       </Button>

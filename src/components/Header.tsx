@@ -31,25 +31,40 @@ export function Header({ realtime }: HeaderProps) {
     const entities: Entity[] = [];
     const relations: Relation[] = [];
     const foreignKeys: { fromTable: string; fromColumn: string; toTable: string; toColumn: string }[] = [];
-    const tableColumns: Map<string, string[]> = new Map();
     
     // Normalize SQL: remove comments and extra whitespace
-    const normalizedSQL = sql
+    let normalizedSQL = sql
       .replace(/--[^\n]*/g, '') // Remove single-line comments
       .replace(/\/\*[\s\S]*?\*\//g, '') // Remove multi-line comments
-      .replace(/\r\n/g, '\n');
+      .replace(/\r\n/g, '\n')
+      .replace(/\r/g, '\n');
     
-    // Parse CREATE TABLE statements - more flexible regex
-    const tableRegex = /CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?`?(\w+)`?\s*\(([\s\S]*?)\)(?:\s*(?:ENGINE|CHARSET|COLLATE|AUTO_INCREMENT|DEFAULT|;)|\s*;|\s*$)/gi;
+    // Extract all CREATE TABLE statements using a more robust approach
+    const tableMatches: { name: string; content: string }[] = [];
+    const createTableRegex = /CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?[`"']?(\w+)[`"']?\s*\(/gi;
+    
     let match;
+    while ((match = createTableRegex.exec(normalizedSQL)) !== null) {
+      const tableName = match[1];
+      const startIdx = match.index + match[0].length;
+      
+      // Find matching closing parenthesis
+      let depth = 1;
+      let endIdx = startIdx;
+      for (let i = startIdx; i < normalizedSQL.length && depth > 0; i++) {
+        if (normalizedSQL[i] === '(') depth++;
+        else if (normalizedSQL[i] === ')') depth--;
+        endIdx = i;
+      }
+      
+      const columnsSection = normalizedSQL.substring(startIdx, endIdx);
+      tableMatches.push({ name: tableName, content: columnsSection });
+    }
+    
     let yPos = 100;
     
-    while ((match = tableRegex.exec(normalizedSQL)) !== null) {
-      const tableName = match[1];
-      const columnsSection = match[2];
-      
+    tableMatches.forEach(({ name: tableName, content: columnsSection }, tableIdx) => {
       const attributes: Attribute[] = [];
-      const fkColumns: string[] = [];
       
       // Split by comma but not commas inside parentheses
       const lines: string[] = [];
@@ -70,7 +85,7 @@ export function Header({ realtime }: HeaderProps) {
       
       // Parse FK constraints first
       lines.forEach(line => {
-        const fkMatch = line.match(/FOREIGN\s+KEY\s*\(`?(\w+)`?\)\s*REFERENCES\s+`?(\w+)`?\s*\(`?(\w+)`?\)/i);
+        const fkMatch = line.match(/FOREIGN\s+KEY\s*\([`"']?(\w+)[`"']?\)\s*REFERENCES\s+[`"']?(\w+)[`"']?\s*\([`"']?(\w+)[`"']?\)/i);
         if (fkMatch) {
           foreignKeys.push({
             fromTable: tableName,
@@ -78,7 +93,6 @@ export function Header({ realtime }: HeaderProps) {
             toTable: fkMatch[2],
             toColumn: fkMatch[3],
           });
-          fkColumns.push(fkMatch[1]);
         }
       });
       
@@ -92,55 +106,62 @@ export function Header({ realtime }: HeaderProps) {
           !upper.startsWith('CONSTRAINT') && 
           !upper.startsWith('UNIQUE') && 
           !upper.startsWith('INDEX') &&
-          !upper.startsWith('CHECK');
+          !upper.startsWith('CHECK') &&
+          !upper.startsWith('FULLTEXT') &&
+          !upper.startsWith('SPATIAL');
       });
       
       columnLines.forEach((line, idx) => {
-        // More robust column regex: handle ENUM, VARCHAR(n), DECIMAL(p,s), etc.
-        const colMatch = line.match(/^`?(\w+)`?\s+(\w+(?:\s*\([^)]+\))?)/i);
+        // More robust column regex: capture column name and type
+        const colMatch = line.match(/^[`"']?(\w+)[`"']?\s+([A-Z_]+)/i);
         if (colMatch) {
           const colName = colMatch[1];
           let colType = colMatch[2].toUpperCase();
           
-          // Handle ENUM type
+          // Handle types with parameters
+          const typeWithParamsMatch = line.match(/^[`"']?\w+[`"']?\s+(\w+\s*\([^)]+\))/i);
+          if (typeWithParamsMatch) {
+            colType = typeWithParamsMatch[1].toUpperCase();
+          }
+          
+          // Handle ENUM type specifically
           const enumMatch = line.match(/ENUM\s*\(([^)]+)\)/i);
           if (enumMatch) {
             colType = `ENUM(${enumMatch[1]})`;
           }
           
+          const isPK = line.toUpperCase().includes('AUTO_INCREMENT') || 
+                       line.toUpperCase().includes('PRIMARY KEY') ||
+                       colName.toLowerCase() === 'id';
+          
           attributes.push({
-            id: `attr_${Date.now()}_${idx}_${Math.random().toString(36).substr(2,5)}`,
+            id: `attr_${Date.now()}_${tableIdx}_${idx}_${Math.random().toString(36).substr(2,5)}`,
             name: colName,
             type: colType as Attribute['type'],
-            isPrimaryKey: line.toUpperCase().includes('AUTO_INCREMENT') || 
-                          line.toUpperCase().includes('PRIMARY KEY') ||
-                          colName.toLowerCase() === 'id',
+            isPrimaryKey: isPK,
             isNullable: !line.toUpperCase().includes('NOT NULL'),
           });
         }
       });
       
-      tableColumns.set(tableName, attributes.map(a => a.name));
-      
       if (attributes.length > 0) {
         entities.push({
-          id: `entity_${Date.now()}_${entities.length}_${Math.random().toString(36).substr(2,5)}`,
+          id: `entity_${Date.now()}_${tableIdx}_${Math.random().toString(36).substr(2,5)}`,
           name: tableName,
           attributes,
-          position: { x: 100 + (entities.length % 3) * 300, y: yPos },
+          position: { x: 100 + (tableIdx % 3) * 350, y: yPos },
         });
-        if ((entities.length) % 3 === 0) yPos += 200;
+        if ((tableIdx + 1) % 3 === 0) yPos += 250;
       }
-    }
+    });
     
-    // Parse ALTER TABLE FK statements - more flexible regex
-    const alterFkRegex = /ALTER\s+TABLE\s+`?(\w+)`?[^;]*?ADD\s+(?:CONSTRAINT\s+`?\w+`?\s+)?FOREIGN\s+KEY\s*\(`?(\w+)`?\)\s*REFERENCES\s+`?(\w+)`?\s*\(`?(\w+)`?\)/gi;
+    // Parse ALTER TABLE FK statements
+    const alterFkRegex = /ALTER\s+TABLE\s+[`"']?(\w+)[`"']?[^;]*?ADD\s+(?:CONSTRAINT\s+[`"']?\w+[`"']?\s+)?FOREIGN\s+KEY\s*\([`"']?(\w+)[`"']?\)\s*REFERENCES\s+[`"']?(\w+)[`"']?\s*\([`"']?(\w+)[`"']?\)/gi;
     while ((match = alterFkRegex.exec(normalizedSQL)) !== null) {
-      // Avoid duplicates
       const exists = foreignKeys.some(fk => 
-        fk.fromTable === match![1] && 
-        fk.fromColumn === match![2] && 
-        fk.toTable === match![3]
+        fk.fromTable.toLowerCase() === match![1].toLowerCase() && 
+        fk.fromColumn.toLowerCase() === match![2].toLowerCase() && 
+        fk.toTable.toLowerCase() === match![3].toLowerCase()
       );
       if (!exists) {
         foreignKeys.push({
@@ -155,26 +176,26 @@ export function Header({ realtime }: HeaderProps) {
     // Detect junction tables (tables with only FKs as primary attributes)
     const junctionTables = new Set<string>();
     entities.forEach(entity => {
-      const entityFKs = foreignKeys.filter(fk => fk.fromTable === entity.name);
+      const entityFKs = foreignKeys.filter(fk => fk.fromTable.toLowerCase() === entity.name.toLowerCase());
       if (entityFKs.length >= 2) {
         const nonFKCols = entity.attributes.filter(a => 
-          !entityFKs.some(fk => fk.fromColumn === a.name) && !a.isPrimaryKey
+          !entityFKs.some(fk => fk.fromColumn.toLowerCase() === a.name.toLowerCase()) && !a.isPrimaryKey
         );
         if (nonFKCols.length === 0) {
-          junctionTables.add(entity.name);
+          junctionTables.add(entity.name.toLowerCase());
         }
       }
     });
     
     // Create relations from FKs
     foreignKeys.forEach((fk, idx) => {
-      const fromEntity = entities.find(e => e.name === fk.fromTable);
-      const toEntity = entities.find(e => e.name === fk.toTable);
+      const fromEntity = entities.find(e => e.name.toLowerCase() === fk.fromTable.toLowerCase());
+      const toEntity = entities.find(e => e.name.toLowerCase() === fk.toTable.toLowerCase());
       
-      if (fromEntity && toEntity && !junctionTables.has(fk.fromTable)) {
+      if (fromEntity && toEntity && !junctionTables.has(fk.fromTable.toLowerCase())) {
         relations.push({
           id: `rel_${Date.now()}_${idx}`,
-          name: `${fk.fromColumn.replace(/_?id$/i, '')}`,
+          name: fk.fromColumn.replace(/_?id$/i, '') || 'has',
           entity1Id: fromEntity.id,
           entity2Id: toEntity.id,
           cardinality1: '0,n',
@@ -189,14 +210,14 @@ export function Header({ realtime }: HeaderProps) {
     
     // Create N-M relations from junction tables
     junctionTables.forEach(junctionName => {
-      const junctionFKs = foreignKeys.filter(fk => fk.fromTable === junctionName);
+      const junctionFKs = foreignKeys.filter(fk => fk.fromTable.toLowerCase() === junctionName);
       if (junctionFKs.length >= 2) {
-        const entity1 = entities.find(e => e.name === junctionFKs[0].toTable);
-        const entity2 = entities.find(e => e.name === junctionFKs[1].toTable);
+        const entity1 = entities.find(e => e.name.toLowerCase() === junctionFKs[0].toTable.toLowerCase());
+        const entity2 = entities.find(e => e.name.toLowerCase() === junctionFKs[1].toTable.toLowerCase());
         
         if (entity1 && entity2) {
           relations.push({
-            id: `rel_junction_${Date.now()}`,
+            id: `rel_junction_${Date.now()}_${Math.random().toString(36).substr(2,5)}`,
             name: junctionName,
             entity1Id: entity1.id,
             entity2Id: entity2.id,
@@ -212,7 +233,7 @@ export function Header({ realtime }: HeaderProps) {
     });
     
     // Remove junction tables from entities list
-    const filteredEntities = entities.filter(e => !junctionTables.has(e.name));
+    const filteredEntities = entities.filter(e => !junctionTables.has(e.name.toLowerCase()));
     
     return { entities: filteredEntities, relations };
   };
@@ -327,14 +348,43 @@ export function Header({ realtime }: HeaderProps) {
           useMeriseStore.setState({ mldModel: snapshot.mldModel });
         }
         
-        await new Promise((r) => setTimeout(r, 500));
+        await new Promise((r) => setTimeout(r, 600));
 
         const canvas = document.getElementById('merise-canvas');
         if (canvas) {
+          // Calculate the bounding box of all content
+          const contentBounds = calculateContentBounds(view, snapshot);
+          
+          // Temporarily resize canvas for full capture
+          const originalStyle = canvas.style.cssText;
+          const minWidth = Math.max(contentBounds.maxX + 100, canvas.offsetWidth);
+          const minHeight = Math.max(contentBounds.maxY + 100, canvas.offsetHeight);
+          
+          canvas.style.width = `${minWidth}px`;
+          canvas.style.height = `${minHeight}px`;
+          canvas.style.overflow = 'visible';
+          
+          await new Promise((r) => setTimeout(r, 100));
+          
           const dataUrl = await toPng(canvas, {
             quality: 1,
             backgroundColor: theme === 'dark' ? '#1a1a2e' : '#e8eef5',
+            width: minWidth,
+            height: minHeight,
+            style: {
+              transform: 'scale(1)',
+              transformOrigin: 'top left',
+            },
+            filter: (node) => {
+              // Exclude zoom controls from export
+              if (node.classList?.contains('zoom-controls')) return false;
+              return true;
+            }
           });
+          
+          // Restore original style
+          canvas.style.cssText = originalStyle;
+          
           const base64 = dataUrl.split(',')[1];
           zip.file(`${view.toLowerCase()}.png`, base64, { base64: true });
         }
@@ -369,6 +419,30 @@ export function Header({ realtime }: HeaderProps) {
         isExporting: false,
       });
     }
+  };
+
+  // Calculate content bounds for proper export sizing
+  const calculateContentBounds = (view: ViewMode, snapshotData: { model: typeof model; mldModel: typeof mldModel }) => {
+    let maxX = 800;
+    let maxY = 600;
+
+    if (view === 'MCD') {
+      snapshotData.model.entities.forEach((entity) => {
+        maxX = Math.max(maxX, entity.position.x + 200);
+        maxY = Math.max(maxY, entity.position.y + 150);
+      });
+      snapshotData.model.relations.forEach((relation) => {
+        maxX = Math.max(maxX, relation.position.x + 150);
+        maxY = Math.max(maxY, relation.position.y + 100);
+      });
+    } else if (snapshotData.mldModel) {
+      snapshotData.mldModel.tables.forEach((table) => {
+        maxX = Math.max(maxX, table.position.x + 250);
+        maxY = Math.max(maxY, table.position.y + 50 + table.columns.length * 40);
+      });
+    }
+
+    return { maxX, maxY };
   };
 
   return (

@@ -10,50 +10,6 @@ interface MLDConnectionLineProps {
   relationType: '1-1' | '1-N' | 'N-M';
 }
 
-function getEdgePoint(
-  fromX: number,
-  fromY: number,
-  fromWidth: number,
-  fromHeight: number,
-  toX: number,
-  toY: number
-): { x: number; y: number } {
-  const centerFromX = fromX + fromWidth / 2;
-  const centerFromY = fromY + fromHeight / 2;
-  
-  const dx = toX - centerFromX;
-  const dy = toY - centerFromY;
-  
-  // Calculate which edge to connect to
-  const absDx = Math.abs(dx);
-  const absDy = Math.abs(dy);
-  
-  let edgeX: number;
-  let edgeY: number;
-  
-  if (absDx * fromHeight > absDy * fromWidth) {
-    // Connect to left or right edge
-    if (dx > 0) {
-      edgeX = fromX + fromWidth;
-      edgeY = centerFromY + (dy / dx) * (fromWidth / 2);
-    } else {
-      edgeX = fromX;
-      edgeY = centerFromY - (dy / dx) * (fromWidth / 2);
-    }
-  } else {
-    // Connect to top or bottom edge
-    if (dy > 0) {
-      edgeY = fromY + fromHeight;
-      edgeX = centerFromX + (dx / dy) * (fromHeight / 2);
-    } else {
-      edgeY = fromY;
-      edgeX = centerFromX - (dx / dy) * (fromHeight / 2);
-    }
-  }
-  
-  return { x: edgeX, y: edgeY };
-}
-
 export function MLDConnectionLine({
   fromX,
   fromY,
@@ -71,83 +27,53 @@ export function MLDConnectionLine({
   const toCenterX = toX + toWidth / 2;
   const toCenterY = toY + toHeight / 2;
   
-  // Get edge connection points
-  const fromEdge = getEdgePoint(fromX, fromY, fromWidth, fromHeight, toCenterX, toCenterY);
-  const toEdge = getEdgePoint(toX, toY, toWidth, toHeight, fromCenterX, fromCenterY);
+  // Get edge connection points and directions
+  const { point: fromEdge, side: fromSide } = getEdgePointWithSide(fromX, fromY, fromWidth, fromHeight, toCenterX, toCenterY);
+  const { point: toEdge, side: toSide } = getEdgePointWithSide(toX, toY, toWidth, toHeight, fromCenterX, fromCenterY);
   
-  // Calculate label positions (20% and 80% along the line)
-  const labelFromX = fromEdge.x + (toEdge.x - fromEdge.x) * 0.15;
-  const labelFromY = fromEdge.y + (toEdge.y - fromEdge.y) * 0.15 - 10;
-  const labelToX = fromEdge.x + (toEdge.x - fromEdge.x) * 0.85;
-  const labelToY = fromEdge.y + (toEdge.y - fromEdge.y) * 0.85 - 10;
+  // Calculate orthogonal path
+  const path = calculateOrthogonalPath(fromEdge, toEdge, fromSide, toSide);
 
   // Determine cardinality labels based on relation type
-  const getLabels = () => {
-    switch (relationType) {
-      case '1-1':
-        return { from: '1', to: '1' };
-      case '1-N':
-        return { from: 'N', to: '1' };
-      case 'N-M':
-        return { from: 'N', to: 'M' };
-      default:
-        return { from: '1', to: '1' };
-    }
-  };
+  const labels = getLabels(relationType);
 
-  const labels = getLabels();
-
-  // Create a curved path for better visibility
-  const midX = (fromEdge.x + toEdge.x) / 2;
-  const midY = (fromEdge.y + toEdge.y) / 2;
-  
-  // Add slight curve offset
-  const dx = toEdge.x - fromEdge.x;
-  const dy = toEdge.y - fromEdge.y;
-  const curveOffset = 0; // Can be adjusted for curved lines
+  // Fixed cardinality positions near tables
+  const labelFromPos = getCardinalityPosition(fromEdge, fromSide);
+  const labelToPos = getCardinalityPosition(toEdge, toSide);
 
   return (
     <g>
-      {/* Main connection line */}
-      <line
-        x1={fromEdge.x}
-        y1={fromEdge.y}
-        x2={toEdge.x}
-        y2={toEdge.y}
+      {/* Orthogonal connection line */}
+      <polyline
+        points={path}
+        fill="none"
         stroke="hsl(var(--primary))"
         strokeWidth="2"
         strokeLinecap="round"
+        strokeLinejoin="round"
       />
       
       {/* Connection point circles */}
-      <circle
-        cx={fromEdge.x}
-        cy={fromEdge.y}
-        r="4"
-        fill="hsl(var(--primary))"
-      />
-      <circle
-        cx={toEdge.x}
-        cy={toEdge.y}
-        r="4"
-        fill="hsl(var(--primary))"
-      />
+      <circle cx={fromEdge.x} cy={fromEdge.y} r="5" fill="hsl(var(--primary))" />
+      <circle cx={toEdge.x} cy={toEdge.y} r="5" fill="hsl(var(--primary))" />
       
-      {/* Cardinality labels */}
+      {/* Cardinality labels - fixed near tables */}
       <g>
         <rect
-          x={labelFromX - 12}
-          y={labelFromY - 12}
-          width="24"
-          height="18"
-          rx="4"
+          x={labelFromPos.x - 14}
+          y={labelFromPos.y - 12}
+          width="28"
+          height="24"
+          rx="6"
           fill="hsl(var(--destructive))"
+          stroke="hsl(var(--background))"
+          strokeWidth="2"
         />
         <text
-          x={labelFromX}
-          y={labelFromY}
+          x={labelFromPos.x}
+          y={labelFromPos.y}
           fill="white"
-          fontSize="12"
+          fontSize="13"
           fontWeight="bold"
           textAnchor="middle"
           dominantBaseline="middle"
@@ -158,18 +84,20 @@ export function MLDConnectionLine({
       
       <g>
         <rect
-          x={labelToX - 12}
-          y={labelToY - 12}
-          width="24"
-          height="18"
-          rx="4"
+          x={labelToPos.x - 14}
+          y={labelToPos.y - 12}
+          width="28"
+          height="24"
+          rx="6"
           fill="hsl(var(--destructive))"
+          stroke="hsl(var(--background))"
+          strokeWidth="2"
         />
         <text
-          x={labelToX}
-          y={labelToY}
+          x={labelToPos.x}
+          y={labelToPos.y}
           fill="white"
-          fontSize="12"
+          fontSize="13"
           fontWeight="bold"
           textAnchor="middle"
           dominantBaseline="middle"
@@ -179,4 +107,112 @@ export function MLDConnectionLine({
       </g>
     </g>
   );
+}
+
+type Side = 'left' | 'right' | 'top' | 'bottom';
+
+function getEdgePointWithSide(
+  rectX: number,
+  rectY: number,
+  width: number,
+  height: number,
+  targetX: number,
+  targetY: number
+): { point: { x: number; y: number }; side: Side } {
+  const centerX = rectX + width / 2;
+  const centerY = rectY + height / 2;
+  
+  const dx = targetX - centerX;
+  const dy = targetY - centerY;
+  
+  const absDx = Math.abs(dx);
+  const absDy = Math.abs(dy);
+  
+  if (absDx * height > absDy * width) {
+    // Connect to left or right edge
+    if (dx > 0) {
+      return { point: { x: rectX + width, y: centerY }, side: 'right' };
+    } else {
+      return { point: { x: rectX, y: centerY }, side: 'left' };
+    }
+  } else {
+    // Connect to top or bottom edge
+    if (dy > 0) {
+      return { point: { x: centerX, y: rectY + height }, side: 'bottom' };
+    } else {
+      return { point: { x: centerX, y: rectY }, side: 'top' };
+    }
+  }
+}
+
+function calculateOrthogonalPath(
+  from: { x: number; y: number },
+  to: { x: number; y: number },
+  fromSide: Side,
+  toSide: Side
+): string {
+  const offset = 30; // Distance to extend before turning
+  
+  let points: { x: number; y: number }[] = [from];
+  
+  // Calculate intermediate points based on sides
+  if (fromSide === 'right' && toSide === 'left') {
+    const midX = (from.x + to.x) / 2;
+    points.push({ x: midX, y: from.y });
+    points.push({ x: midX, y: to.y });
+  } else if (fromSide === 'left' && toSide === 'right') {
+    const midX = (from.x + to.x) / 2;
+    points.push({ x: midX, y: from.y });
+    points.push({ x: midX, y: to.y });
+  } else if (fromSide === 'bottom' && toSide === 'top') {
+    const midY = (from.y + to.y) / 2;
+    points.push({ x: from.x, y: midY });
+    points.push({ x: to.x, y: midY });
+  } else if (fromSide === 'top' && toSide === 'bottom') {
+    const midY = (from.y + to.y) / 2;
+    points.push({ x: from.x, y: midY });
+    points.push({ x: to.x, y: midY });
+  } else if (fromSide === 'right' || fromSide === 'left') {
+    // Horizontal start, vertical end
+    const extendX = from.x + (fromSide === 'right' ? offset : -offset);
+    points.push({ x: extendX, y: from.y });
+    points.push({ x: extendX, y: to.y });
+  } else {
+    // Vertical start, horizontal end
+    const extendY = from.y + (fromSide === 'bottom' ? offset : -offset);
+    points.push({ x: from.x, y: extendY });
+    points.push({ x: to.x, y: extendY });
+  }
+  
+  points.push(to);
+  
+  return points.map(p => `${p.x},${p.y}`).join(' ');
+}
+
+function getCardinalityPosition(edge: { x: number; y: number }, side: Side): { x: number; y: number } {
+  const offset = 25;
+  
+  switch (side) {
+    case 'right':
+      return { x: edge.x + offset, y: edge.y };
+    case 'left':
+      return { x: edge.x - offset, y: edge.y };
+    case 'bottom':
+      return { x: edge.x, y: edge.y + offset };
+    case 'top':
+      return { x: edge.x, y: edge.y - offset };
+  }
+}
+
+function getLabels(relationType: '1-1' | '1-N' | 'N-M') {
+  switch (relationType) {
+    case '1-1':
+      return { from: '1', to: '1' };
+    case '1-N':
+      return { from: 'N', to: '1' };
+    case 'N-M':
+      return { from: 'N', to: 'M' };
+    default:
+      return { from: '1', to: '1' };
+  }
 }

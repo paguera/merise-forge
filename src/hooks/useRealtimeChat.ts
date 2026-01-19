@@ -32,6 +32,8 @@ export function useRealtimeChat(projectId: string | null, username: string, user
   const [reactions, setReactions] = useState<ChatReaction[]>([]);
   const [loading, setLoading] = useState(false);
   const initialLoadDone = useRef(false);
+  // Track message IDs we've already notified about to prevent duplicates
+  const notifiedMessageIds = useRef<Set<string>>(new Set());
 
   // Fetch initial messages and reactions
   useEffect(() => {
@@ -39,6 +41,7 @@ export function useRealtimeChat(projectId: string | null, username: string, user
       setMessages([]);
       setReactions([]);
       initialLoadDone.current = false;
+      notifiedMessageIds.current.clear();
       return;
     }
 
@@ -59,6 +62,8 @@ export function useRealtimeChat(projectId: string | null, username: string, user
 
       if (!messagesRes.error && messagesRes.data) {
         setMessages(messagesRes.data as ChatMessage[]);
+        // Mark existing messages as already notified
+        (messagesRes.data as ChatMessage[]).forEach(m => notifiedMessageIds.current.add(m.id));
       }
       
       if (!reactionsRes.error && reactionsRes.data) {
@@ -93,7 +98,11 @@ export function useRealtimeChat(projectId: string | null, username: string, user
           setMessages((prev) => [...prev, newMessage]);
           
           // Handle notifications for messages from others, after initial load
-          if (initialLoadDone.current && newMessage.username !== username) {
+          // Only notify if we haven't notified about this message before
+          if (initialLoadDone.current && 
+              newMessage.username !== username && 
+              !notifiedMessageIds.current.has(newMessage.id)) {
+            notifiedMessageIds.current.add(newMessage.id);
             const isMentioned = containsMention(newMessage.message, username);
             
             if (isMentioned) {

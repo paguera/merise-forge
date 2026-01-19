@@ -45,34 +45,54 @@ function generateUserId(username: string): string {
 export function useRealtimePresence(projectId: string | null, username: string) {
   const [users, setUsers] = useState<PresenceUser[]>([]);
   // Use refs for stable identity - computed once based on username
-  const myUserId = useRef(generateUserId(username)).current;
-  const myColor = useRef(getRandomColor(username)).current;
+  const stableIdentity = useRef<{ id: string; color: string } | null>(null);
+  if (!stableIdentity.current && username) {
+    stableIdentity.current = {
+      id: generateUserId(username),
+      color: getRandomColor(username),
+    };
+  }
+  const myUserId = stableIdentity.current?.id || '';
+  const myColor = stableIdentity.current?.color || COLORS[0];
+  
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const cursorRef = useRef<CursorPosition | null>(null);
   const initialSyncDone = useRef(false);
   // Track users we've already notified about to prevent duplicate notifications
   const notifiedUsers = useRef<Set<string>>(new Set());
+  // Throttle cursor updates to reduce channel traffic
+  const lastCursorUpdate = useRef(0);
+  const CURSOR_THROTTLE_MS = 50;
 
   const updateCursor = useCallback((x: number, y: number) => {
+    const now = Date.now();
+    // Throttle cursor updates
+    if (now - lastCursorUpdate.current < CURSOR_THROTTLE_MS) return;
+    lastCursorUpdate.current = now;
+    
     cursorRef.current = { x, y };
-    if (channelRef.current && projectId) {
+    if (channelRef.current && projectId && myUserId) {
+      // Only send cursor position, don't trigger sound on cursor updates
       channelRef.current.track({
         id: myUserId,
         username: username || 'Anonyme',
         color: myColor,
         cursor: cursorRef.current,
-        lastSeen: Date.now(),
+        lastSeen: now,
       });
     }
   }, [projectId, myUserId, username, myColor]);
 
   useEffect(() => {
-    if (!projectId || !username) {
+    if (!projectId || !username || !myUserId) {
       setUsers([]);
       initialSyncDone.current = false;
       notifiedUsers.current.clear();
       return;
     }
+    
+    // Prevent recreation if we already have a channel for this project
+    if (channelRef.current) return;
 
     const channel = supabase.channel(`presence-${projectId}`, {
       config: {

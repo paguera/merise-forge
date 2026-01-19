@@ -1,10 +1,27 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { useMeriseStore } from '@/hooks/useMeriseStore';
 
 export function useCanvasZoom() {
+  const isExporting = useMeriseStore((state) => state.isExporting);
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const lastMousePos = useRef({ x: 0, y: 0 });
+  // Store the scale/position before export to restore after
+  const preExportState = useRef<{ scale: number; position: { x: number; y: number } } | null>(null);
+
+  // When export starts, save current state and reset to 100% for clean capture
+  useEffect(() => {
+    if (isExporting && !preExportState.current) {
+      preExportState.current = { scale, position };
+      // Don't reset scale during export - keep current scale
+    } else if (!isExporting && preExportState.current) {
+      // Restore after export
+      setScale(preExportState.current.scale);
+      setPosition(preExportState.current.position);
+      preExportState.current = null;
+    }
+  }, [isExporting]);
 
   const zoomIn = useCallback(() => {
     setScale((s) => Math.min(s + 0.1, 2));

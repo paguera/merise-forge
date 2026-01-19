@@ -33,20 +33,42 @@ export function Header({ realtime }: HeaderProps) {
     const foreignKeys: { fromTable: string; fromColumn: string; toTable: string; toColumn: string }[] = [];
     const tableColumns: Map<string, string[]> = new Map();
     
-    // Parse CREATE TABLE statements
-    const tableRegex = /CREATE TABLE\s+`?(\w+)`?\s*\(([\s\S]*?)\)\s*(?:ENGINE|;)/gi;
+    // Normalize SQL: remove comments and extra whitespace
+    const normalizedSQL = sql
+      .replace(/--[^\n]*/g, '') // Remove single-line comments
+      .replace(/\/\*[\s\S]*?\*\//g, '') // Remove multi-line comments
+      .replace(/\r\n/g, '\n');
+    
+    // Parse CREATE TABLE statements - more flexible regex
+    const tableRegex = /CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?`?(\w+)`?\s*\(([\s\S]*?)\)(?:\s*(?:ENGINE|CHARSET|COLLATE|AUTO_INCREMENT|DEFAULT|;)|\s*;|\s*$)/gi;
     let match;
     let yPos = 100;
     
-    while ((match = tableRegex.exec(sql)) !== null) {
+    while ((match = tableRegex.exec(normalizedSQL)) !== null) {
       const tableName = match[1];
       const columnsSection = match[2];
       
       const attributes: Attribute[] = [];
       const fkColumns: string[] = [];
-      const lines = columnsSection.split(/,(?![^()]*\))/).map(l => l.trim());
       
-      // Parse FK constraints
+      // Split by comma but not commas inside parentheses
+      const lines: string[] = [];
+      let depth = 0;
+      let current = '';
+      for (let i = 0; i < columnsSection.length; i++) {
+        const char = columnsSection[i];
+        if (char === '(') depth++;
+        else if (char === ')') depth--;
+        else if (char === ',' && depth === 0) {
+          lines.push(current.trim());
+          current = '';
+          continue;
+        }
+        current += char;
+      }
+      if (current.trim()) lines.push(current.trim());
+      
+      // Parse FK constraints first
       lines.forEach(line => {
         const fkMatch = line.match(/FOREIGN\s+KEY\s*\(`?(\w+)`?\)\s*REFERENCES\s+`?(\w+)`?\s*\(`?(\w+)`?\)/i);
         if (fkMatch) {
@@ -60,16 +82,39 @@ export function Header({ realtime }: HeaderProps) {
         }
       });
       
-      const columnLines = lines.filter(l => l && !l.startsWith('PRIMARY') && !l.startsWith('FOREIGN') && !l.startsWith('KEY') && !l.startsWith('CONSTRAINT') && !l.startsWith('UNIQUE') && !l.startsWith('INDEX'));
+      // Filter constraint lines and parse column definitions
+      const columnLines = lines.filter(l => {
+        const upper = l.toUpperCase().trim();
+        return l && 
+          !upper.startsWith('PRIMARY KEY') && 
+          !upper.startsWith('FOREIGN KEY') && 
+          !upper.startsWith('KEY ') && 
+          !upper.startsWith('CONSTRAINT') && 
+          !upper.startsWith('UNIQUE') && 
+          !upper.startsWith('INDEX') &&
+          !upper.startsWith('CHECK');
+      });
       
       columnLines.forEach((line, idx) => {
-        const colMatch = line.match(/`?(\w+)`?\s+(\w+(?:\(\d+(?:,\d+)?\))?)/i);
+        // More robust column regex: handle ENUM, VARCHAR(n), DECIMAL(p,s), etc.
+        const colMatch = line.match(/^`?(\w+)`?\s+(\w+(?:\s*\([^)]+\))?)/i);
         if (colMatch) {
+          const colName = colMatch[1];
+          let colType = colMatch[2].toUpperCase();
+          
+          // Handle ENUM type
+          const enumMatch = line.match(/ENUM\s*\(([^)]+)\)/i);
+          if (enumMatch) {
+            colType = `ENUM(${enumMatch[1]})`;
+          }
+          
           attributes.push({
             id: `attr_${Date.now()}_${idx}_${Math.random().toString(36).substr(2,5)}`,
-            name: colMatch[1],
-            type: colMatch[2].toUpperCase() as Attribute['type'],
-            isPrimaryKey: line.toUpperCase().includes('AUTO_INCREMENT') || colMatch[1].toLowerCase() === 'id',
+            name: colName,
+            type: colType as Attribute['type'],
+            isPrimaryKey: line.toUpperCase().includes('AUTO_INCREMENT') || 
+                          line.toUpperCase().includes('PRIMARY KEY') ||
+                          colName.toLowerCase() === 'id',
             isNullable: !line.toUpperCase().includes('NOT NULL'),
           });
         }
@@ -88,15 +133,23 @@ export function Header({ realtime }: HeaderProps) {
       }
     }
     
-    // Parse ALTER TABLE FK statements
-    const alterFkRegex = /ALTER\s+TABLE\s+`?(\w+)`?[\s\S]*?FOREIGN\s+KEY\s*\(`?(\w+)`?\)\s*REFERENCES\s+`?(\w+)`?\s*\(`?(\w+)`?\)/gi;
-    while ((match = alterFkRegex.exec(sql)) !== null) {
-      foreignKeys.push({
-        fromTable: match[1],
-        fromColumn: match[2],
-        toTable: match[3],
-        toColumn: match[4],
-      });
+    // Parse ALTER TABLE FK statements - more flexible regex
+    const alterFkRegex = /ALTER\s+TABLE\s+`?(\w+)`?[^;]*?ADD\s+(?:CONSTRAINT\s+`?\w+`?\s+)?FOREIGN\s+KEY\s*\(`?(\w+)`?\)\s*REFERENCES\s+`?(\w+)`?\s*\(`?(\w+)`?\)/gi;
+    while ((match = alterFkRegex.exec(normalizedSQL)) !== null) {
+      // Avoid duplicates
+      const exists = foreignKeys.some(fk => 
+        fk.fromTable === match![1] && 
+        fk.fromColumn === match![2] && 
+        fk.toTable === match![3]
+      );
+      if (!exists) {
+        foreignKeys.push({
+          fromTable: match[1],
+          fromColumn: match[2],
+          toTable: match[3],
+          toColumn: match[4],
+        });
+      }
     }
     
     // Detect junction tables (tables with only FKs as primary attributes)
@@ -230,6 +283,9 @@ export function Header({ realtime }: HeaderProps) {
   };
 
   const handleExportZip = async () => {
+    // Set exporting flag to prevent canvas zoom reset
+    useMeriseStore.setState({ isExporting: true });
+    
     // Capture full snapshot BEFORE any view changes
     const snapshot = (() => {
       const s = useMeriseStore.getState();
@@ -271,7 +327,7 @@ export function Header({ realtime }: HeaderProps) {
           useMeriseStore.setState({ mldModel: snapshot.mldModel });
         }
         
-        await new Promise((r) => setTimeout(r, 400));
+        await new Promise((r) => setTimeout(r, 500));
 
         const canvas = document.getElementById('merise-canvas');
         if (canvas) {
@@ -301,7 +357,7 @@ export function Header({ realtime }: HeaderProps) {
       console.error(err);
       toast.error("Erreur lors de l'export");
     } finally {
-      // Restore EXACT state from snapshot
+      // Restore EXACT state from snapshot and clear exporting flag
       useMeriseStore.setState({
         model: snapshot.model,
         mldModel: snapshot.mldModel,
@@ -310,6 +366,7 @@ export function Header({ realtime }: HeaderProps) {
         selectedEntityId: snapshot.selectedEntityId,
         selectedRelationId: snapshot.selectedRelationId,
         generatedSQL: snapshot.generatedSQL,
+        isExporting: false,
       });
     }
   };

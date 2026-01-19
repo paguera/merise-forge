@@ -13,6 +13,7 @@ interface MeriseStore {
   selectedEntityId: string | null;
   selectedRelationId: string | null;
   generatedSQL: string;
+  isExporting: boolean;
 
   // Actions
   setViewMode: (mode: ViewMode) => void;
@@ -62,6 +63,7 @@ export const useMeriseStore = create<MeriseStore>()(
       selectedEntityId: null,
       selectedRelationId: null,
       generatedSQL: '',
+      isExporting: false,
 
   setViewMode: (mode) => {
     if (mode === 'MLD' || mode === 'MPD') {

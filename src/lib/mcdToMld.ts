@@ -1,5 +1,22 @@
 import { MeriseModel, MLDModel, MLDTable, MLDColumn, MLDRelation, Entity, Relation } from '@/types/merise';
 
+/**
+ * Transforme un MCD (Modèle Conceptuel de Données) en MLD (Modèle Logique de Données)
+ * 
+ * RÈGLE MERISE POUR LES FK:
+ * - La FK va toujours du côté "N" (many/enfant) vers le côté "1" (one/parent)
+ * 
+ * INTERPRÉTATION DES CARDINALITÉS:
+ * - cardinality1 = "Combien de Entity2 peut avoir UN Entity1" (cardinalité côté Entity2)
+ * - cardinality2 = "Combien de Entity1 peut avoir UN Entity2" (cardinalité côté Entity1)
+ * 
+ * Donc pour une relation Entity1 —(1,1)— [Verbe] —(0,n)— Entity2:
+ * - cardinality1 = "0,n" signifie: UN Entity1 peut avoir 0 à N Entity2
+ * - cardinality2 = "1,1" signifie: UN Entity2 a exactement 1 Entity1
+ * 
+ * → Entity2 est le côté N (car cardinality1 finit par 'n')
+ * → La FK va dans Entity2, pointant vers Entity1
+ */
 export function transformMCDtoMLD(mcd: MeriseModel): MLDModel {
   const tables: MLDTable[] = [];
   const relations: MLDRelation[] = [];
@@ -46,11 +63,11 @@ export function transformMCDtoMLD(mcd: MeriseModel): MLDModel {
     const relationType = getRelationType(relation.cardinality1, relation.cardinality2);
 
     if (relationType === 'N-M') {
-      // Create junction table
+      // Create junction table for N-M relationships
       const junctionTable = createJunctionTable(relation, entity1, entity2);
       tables.push(junctionTable);
 
-      // Add relations to junction table
+      // Add relations from junction table to both entities
       relations.push({
         id: `${relation.id}_rel1`,
         fromTable: junctionTable.name,
@@ -69,17 +86,29 @@ export function transformMCDtoMLD(mcd: MeriseModel): MLDModel {
         type: '1-N',
       });
     } else if (relationType === '1-N') {
-      // RÈGLE MERISE : La FK va toujours du côté N (enfant/many) vers le côté 1 (parent/one)
-      // Le côté N est celui dont la cardinalité se termine par 'n'
-      const isEntity2NSide = isNSide(relation.cardinality2);
+      // RÈGLE MERISE: La FK va du côté N vers le côté 1
+      // 
+      // cardinality1 indique combien de Entity2 peut avoir UN Entity1
+      // cardinality2 indique combien de Entity1 peut avoir UN Entity2
+      //
+      // Si cardinality1 finit par 'n' → Entity1 peut avoir plusieurs Entity2
+      //   → Entity2 est le côté N, Entity1 est le côté 1
+      //   → La FK va dans Entity2, pointant vers Entity1
+      //
+      // Si cardinality2 finit par 'n' → Entity2 peut avoir plusieurs Entity1
+      //   → Entity1 est le côté N, Entity2 est le côté 1
+      //   → La FK va dans Entity1, pointant vers Entity2
       
-      // L'entité côté N reçoit la FK qui référence l'entité côté 1
-      const nSideEntity = isEntity2NSide ? entity2 : entity1;
-      const oneSideEntity = isEntity2NSide ? entity1 : entity2;
+      const card1EndsWithN = isNSide(relation.cardinality1);
+      
+      // Si cardinality1 finit par 'n', Entity2 est le côté N (reçoit la FK)
+      // Si cardinality2 finit par 'n', Entity1 est le côté N (reçoit la FK)
+      const nSideEntity = card1EndsWithN ? entity2 : entity1;
+      const oneSideEntity = card1EndsWithN ? entity1 : entity2;
+      const nSideCardinality = card1EndsWithN ? relation.cardinality1 : relation.cardinality2;
       
       const targetTable = tables.find((t) => t.id === nSideEntity.id);
       if (targetTable) {
-        // Éviter les doublons de FK
         const fkName = `${oneSideEntity.name.toLowerCase()}_id`;
         const existingFK = targetTable.columns.find(c => c.name === fkName && c.isForeignKey);
         
@@ -94,9 +123,8 @@ export function transformMCDtoMLD(mcd: MeriseModel): MLDModel {
               table: oneSideEntity.name,
               column: 'id',
             },
-            isNullable: isEntity2NSide 
-              ? relation.cardinality2.startsWith('0') 
-              : relation.cardinality1.startsWith('0'),
+            // La FK est nullable si la cardinalité du côté N commence par 0
+            isNullable: nSideCardinality.startsWith('0'),
           });
 
           relations.push({
@@ -110,8 +138,8 @@ export function transformMCDtoMLD(mcd: MeriseModel): MLDModel {
         }
       }
     } else {
-      // 1-1 relation: add FK to the optional side (0,1) or first entity if both mandatory
-      const isEntity1Optional = relation.cardinality1.startsWith('0');
+      // 1-1 relation: add FK to the optional side (0,1) or to entity2 if both are mandatory
+      const isEntity1Optional = relation.cardinality2.startsWith('0');
       const targetEntity = isEntity1Optional ? entity1 : entity2;
       const referencedEntity = isEntity1Optional ? entity2 : entity1;
       

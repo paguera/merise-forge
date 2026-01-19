@@ -9,7 +9,7 @@ export function transformMCDtoMLD(mcd: MeriseModel): MLDModel {
     const columns: MLDColumn[] = entity.attributes.map((attr) => ({
       id: attr.id,
       name: attr.name,
-      type: getColumnType(attr.type, attr.length),
+      type: getColumnType(attr.type, attr.length, attr.enumValues),
       isPrimaryKey: attr.isPrimaryKey,
       isForeignKey: false,
       isNullable: attr.isNullable,
@@ -132,12 +132,15 @@ export function transformMCDtoMLD(mcd: MeriseModel): MLDModel {
   return { tables, relations };
 }
 
-function getColumnType(type: string, length?: number): string {
+function getColumnType(type: string, length?: number, enumValues?: string[]): string {
   if (type === 'VARCHAR' && length) {
     return `VARCHAR(${length})`;
   }
   if (type === 'DECIMAL') {
     return 'DECIMAL(10,2)';
+  }
+  if (type === 'ENUM' && enumValues && enumValues.length > 0) {
+    return `ENUM('${enumValues.join("', '")}')`;
   }
   return type;
 }

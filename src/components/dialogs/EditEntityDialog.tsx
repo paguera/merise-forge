@@ -23,7 +23,7 @@ interface EditEntityDialogProps {
   onRemoveAttribute: (attributeId: string) => void;
 }
 
-const BASE_TYPES: Attribute['type'][] = ['INT', 'VARCHAR', 'TEXT', 'DATE', 'DATETIME', 'BOOLEAN', 'DECIMAL', 'FLOAT'];
+const BASE_TYPES: Attribute['type'][] = ['INT', 'VARCHAR', 'TEXT', 'DATE', 'DATETIME', 'BOOLEAN', 'DECIMAL', 'FLOAT', 'ENUM'];
 const TYPES_WITH_LENGTH: Attribute['type'][] = ['VARCHAR', 'DECIMAL'];
 
 export function EditEntityDialog({
@@ -41,6 +41,7 @@ export function EditEntityDialog({
   const [newAttrLength, setNewAttrLength] = useState('255');
   const [newAttrPK, setNewAttrPK] = useState(false);
   const [newAttrNullable, setNewAttrNullable] = useState(false);
+  const [newEnumValues, setNewEnumValues] = useState('');
 
   useEffect(() => {
     if (entity) {
@@ -51,6 +52,7 @@ export function EditEntityDialog({
   if (!entity) return null;
 
   const needsLength = TYPES_WITH_LENGTH.includes(newAttrType);
+  const isEnum = newAttrType === 'ENUM';
 
   const handleSaveName = () => {
     if (entityName.trim() && entityName !== entity.name) {
@@ -61,6 +63,9 @@ export function EditEntityDialog({
   const handleAddAttribute = () => {
     if (newAttrName.trim()) {
       const length = needsLength && newAttrLength ? parseInt(newAttrLength) : undefined;
+      const enumValues = isEnum && newEnumValues.trim() 
+        ? newEnumValues.split(',').map(v => v.trim()).filter(v => v) 
+        : undefined;
       onAddAttribute({
         id: `attr_${Date.now()}`,
         name: newAttrName.trim(),
@@ -68,12 +73,14 @@ export function EditEntityDialog({
         isPrimaryKey: newAttrPK,
         isNullable: newAttrNullable,
         length,
+        enumValues,
       });
       setNewAttrName('');
       setNewAttrType('VARCHAR');
       setNewAttrLength('255');
       setNewAttrPK(false);
       setNewAttrNullable(false);
+      setNewEnumValues('');
     }
   };
 
@@ -110,49 +117,61 @@ export function EditEntityDialog({
               {entity.attributes.map((attr) => (
                 <div
                   key={attr.id}
-                  className="flex items-center gap-2 p-2 bg-secondary/50 rounded-lg"
+                  className="flex flex-col gap-2 p-2 bg-secondary/50 rounded-lg"
                 >
-                  <Input
-                    value={attr.name}
-                    onChange={(e) => onUpdateAttribute(attr.id, { name: e.target.value })}
-                    className="flex-1 h-8 text-sm"
-                  />
-                  <Select
-                    value={attr.type}
-                    onValueChange={(v) => onUpdateAttribute(attr.id, { type: v as Attribute['type'] })}
-                  >
-                    <SelectTrigger className="w-28 h-8 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {BASE_TYPES.map((type) => (
-                        <SelectItem key={type} value={type}>{type}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {TYPES_WITH_LENGTH.includes(attr.type) && (
+                  <div className="flex items-center gap-2">
                     <Input
-                      value={attr.length || ''}
-                      onChange={(e) => onUpdateAttribute(attr.id, { length: parseInt(e.target.value) || undefined })}
-                      className="w-16 h-8 text-xs"
-                      placeholder="255"
+                      value={attr.name}
+                      onChange={(e) => onUpdateAttribute(attr.id, { name: e.target.value })}
+                      className="flex-1 h-8 text-sm"
+                    />
+                    <Select
+                      value={attr.type}
+                      onValueChange={(v) => onUpdateAttribute(attr.id, { type: v as Attribute['type'] })}
+                    >
+                      <SelectTrigger className="w-28 h-8 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {BASE_TYPES.map((type) => (
+                          <SelectItem key={type} value={type}>{type}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {TYPES_WITH_LENGTH.includes(attr.type) && (
+                      <Input
+                        value={attr.length || ''}
+                        onChange={(e) => onUpdateAttribute(attr.id, { length: parseInt(e.target.value) || undefined })}
+                        className="w-16 h-8 text-xs"
+                        placeholder="255"
+                      />
+                    )}
+                    <div className="flex items-center gap-1">
+                      <Checkbox
+                        checked={attr.isPrimaryKey}
+                        onCheckedChange={(checked) => onUpdateAttribute(attr.id, { isPrimaryKey: !!checked })}
+                      />
+                      <span className="text-xs text-muted-foreground">PK</span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-destructive hover:text-destructive"
+                      onClick={() => onRemoveAttribute(attr.id)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  {attr.type === 'ENUM' && (
+                    <Input
+                      value={attr.enumValues?.join(', ') || ''}
+                      onChange={(e) => onUpdateAttribute(attr.id, { 
+                        enumValues: e.target.value.split(',').map(v => v.trim()).filter(v => v) 
+                      })}
+                      className="h-8 text-xs"
+                      placeholder="Valeurs ENUM (séparées par des virgules)"
                     />
                   )}
-                  <div className="flex items-center gap-1">
-                    <Checkbox
-                      checked={attr.isPrimaryKey}
-                      onCheckedChange={(checked) => onUpdateAttribute(attr.id, { isPrimaryKey: !!checked })}
-                    />
-                    <span className="text-xs text-muted-foreground">PK</span>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-destructive hover:text-destructive"
-                    onClick={() => onRemoveAttribute(attr.id)}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
                 </div>
               ))}
             </div>
@@ -187,6 +206,13 @@ export function EditEntityDialog({
                 />
               )}
             </div>
+            {isEnum && (
+              <Input
+                value={newEnumValues}
+                onChange={(e) => setNewEnumValues(e.target.value)}
+                placeholder="Valeurs ENUM (séparées par des virgules, ex: actif, inactif, en_attente)"
+              />
+            )}
             <div className="flex items-center justify-between">
               <div className="flex gap-4">
                 <div className="flex items-center gap-2">
@@ -206,7 +232,7 @@ export function EditEntityDialog({
                   <Label htmlFor="newNullable" className="text-sm">Nullable</Label>
                 </div>
               </div>
-              <Button onClick={handleAddAttribute} disabled={!newAttrName.trim()} size="sm">
+              <Button onClick={handleAddAttribute} disabled={!newAttrName.trim() || (isEnum && !newEnumValues.trim())} size="sm">
                 <Plus className="w-4 h-4 mr-1" />
                 Ajouter
               </Button>

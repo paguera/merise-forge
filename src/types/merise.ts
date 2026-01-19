@@ -1,10 +1,11 @@
 export interface Attribute {
   id: string;
   name: string;
-  type: 'INT' | 'VARCHAR' | 'TEXT' | 'DATE' | 'DATETIME' | 'BOOLEAN' | 'FLOAT' | 'DECIMAL';
+  type: 'INT' | 'VARCHAR' | 'TEXT' | 'DATE' | 'DATETIME' | 'BOOLEAN' | 'FLOAT' | 'DECIMAL' | 'ENUM';
   isPrimaryKey: boolean;
   isNullable: boolean;
   length?: number;
+  enumValues?: string[]; // For ENUM type
 }
 
 export interface Entity {

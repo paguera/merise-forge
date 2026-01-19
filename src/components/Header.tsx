@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Database, Download, Moon, Sun, Info, Save, FolderOpen, Archive, Upload } from 'lucide-react';
+import { Database, Moon, Sun, Info, Save, FolderOpen, Archive, Upload, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -10,6 +10,8 @@ import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { SaveProjectDialog } from '@/components/dialogs/SaveProjectDialog';
 import { LoadProjectDialog } from '@/components/dialogs/LoadProjectDialog';
+import { CollaborationDialog } from '@/components/dialogs/CollaborationDialog';
+import { useRealtimeProject } from '@/hooks/useRealtimeProject';
 import JSZip from 'jszip';
 
 export function Header() {
@@ -18,7 +20,9 @@ export function Header() {
   const { theme, toggleTheme } = useTheme();
   const [saveOpen, setSaveOpen] = useState(false);
   const [loadOpen, setLoadOpen] = useState(false);
+  const [collabOpen, setCollabOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const realtime = useRealtimeProject();
 
   const parseSQLFile = (sql: string) => {
     const entities: Entity[] = [];
@@ -353,6 +357,14 @@ export function Header() {
         <Button variant="ghost" size="icon" onClick={toggleTheme}>
           {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
         </Button>
+        <Button
+          variant={realtime.connected ? 'default' : 'ghost'}
+          size="icon"
+          onClick={() => setCollabOpen(true)}
+          title="Collaboration"
+        >
+          <Users className="w-5 h-5" />
+        </Button>
         <Button variant="secondary" onClick={handleExportZip} disabled={!mldModel}>
           <Archive className="w-4 h-4 mr-2" />
           ZIP
@@ -366,6 +378,15 @@ export function Header() {
         projects={getSavedProjects()} 
         onLoad={handleLoadProject}
         onDelete={handleDeleteProject}
+      />
+      <CollaborationDialog
+        open={collabOpen}
+        onOpenChange={setCollabOpen}
+        onJoin={realtime.joinProject}
+        connected={realtime.connected}
+        projectName={realtime.projectName}
+        onLeave={realtime.leaveProject}
+        onPush={realtime.pushState}
       />
     </header>
   );

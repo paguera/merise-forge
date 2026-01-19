@@ -27,37 +27,34 @@ export function MLDConnectionLine({
   const toCenterX = toX + toWidth / 2;
   const toCenterY = toY + toHeight / 2;
   
-  // Get edge connection points and directions
-  const { point: fromEdge, side: fromSide } = getEdgePointWithSide(fromX, fromY, fromWidth, fromHeight, toCenterX, toCenterY);
-  const { point: toEdge, side: toSide } = getEdgePointWithSide(toX, toY, toWidth, toHeight, fromCenterX, fromCenterY);
+  // Get edge connection points
+  const fromEdge = getEdgePoint(fromX, fromY, fromWidth, fromHeight, toCenterX, toCenterY);
+  const toEdge = getEdgePoint(toX, toY, toWidth, toHeight, fromCenterX, fromCenterY);
   
-  // Calculate orthogonal path
-  const path = calculateOrthogonalPath(fromEdge, toEdge, fromSide, toSide);
+  // Get cardinality positions with perpendicular offset
+  const labelFromPos = getCardinalityPosition(fromEdge.x, fromEdge.y, toEdge.x, toEdge.y);
+  const labelToPos = getCardinalityPosition(toEdge.x, toEdge.y, fromEdge.x, fromEdge.y);
 
-  // Determine cardinality labels based on relation type
   const labels = getLabels(relationType);
-
-  // Fixed cardinality positions near tables
-  const labelFromPos = getCardinalityPosition(fromEdge, fromSide);
-  const labelToPos = getCardinalityPosition(toEdge, toSide);
 
   return (
     <g>
-      {/* Orthogonal connection line */}
-      <polyline
-        points={path}
-        fill="none"
+      {/* Direct connection line */}
+      <line
+        x1={fromEdge.x}
+        y1={fromEdge.y}
+        x2={toEdge.x}
+        y2={toEdge.y}
         stroke="hsl(var(--primary))"
         strokeWidth="2"
         strokeLinecap="round"
-        strokeLinejoin="round"
       />
       
       {/* Connection point circles */}
       <circle cx={fromEdge.x} cy={fromEdge.y} r="5" fill="hsl(var(--primary))" />
       <circle cx={toEdge.x} cy={toEdge.y} r="5" fill="hsl(var(--primary))" />
       
-      {/* Cardinality labels - fixed near tables */}
+      {/* Cardinality labels */}
       <g>
         <rect
           x={labelFromPos.x - 14}
@@ -109,16 +106,14 @@ export function MLDConnectionLine({
   );
 }
 
-type Side = 'left' | 'right' | 'top' | 'bottom';
-
-function getEdgePointWithSide(
+function getEdgePoint(
   rectX: number,
   rectY: number,
   width: number,
   height: number,
   targetX: number,
   targetY: number
-): { point: { x: number; y: number }; side: Side } {
+): { x: number; y: number } {
   const centerX = rectX + width / 2;
   const centerY = rectY + height / 2;
   
@@ -131,77 +126,52 @@ function getEdgePointWithSide(
   if (absDx * height > absDy * width) {
     // Connect to left or right edge
     if (dx > 0) {
-      return { point: { x: rectX + width, y: centerY }, side: 'right' };
+      const edgeY = centerY + (dy / dx) * (width / 2);
+      return { x: rectX + width, y: edgeY };
     } else {
-      return { point: { x: rectX, y: centerY }, side: 'left' };
+      const edgeY = centerY - (dy / dx) * (width / 2);
+      return { x: rectX, y: edgeY };
     }
   } else {
     // Connect to top or bottom edge
     if (dy > 0) {
-      return { point: { x: centerX, y: rectY + height }, side: 'bottom' };
+      const edgeX = centerX + (dx / dy) * (height / 2);
+      return { x: edgeX, y: rectY + height };
     } else {
-      return { point: { x: centerX, y: rectY }, side: 'top' };
+      const edgeX = centerX - (dx / dy) * (height / 2);
+      return { x: edgeX, y: rectY };
     }
   }
 }
 
-function calculateOrthogonalPath(
-  from: { x: number; y: number },
-  to: { x: number; y: number },
-  fromSide: Side,
-  toSide: Side
-): string {
-  const offset = 30; // Distance to extend before turning
+function getCardinalityPosition(
+  startX: number,
+  startY: number,
+  endX: number,
+  endY: number
+): { x: number; y: number } {
+  const dx = endX - startX;
+  const dy = endY - startY;
+  const len = Math.sqrt(dx * dx + dy * dy) || 1;
   
-  let points: { x: number; y: number }[] = [from];
+  // Normalized direction
+  const nx = dx / len;
+  const ny = dy / len;
   
-  // Calculate intermediate points based on sides
-  if (fromSide === 'right' && toSide === 'left') {
-    const midX = (from.x + to.x) / 2;
-    points.push({ x: midX, y: from.y });
-    points.push({ x: midX, y: to.y });
-  } else if (fromSide === 'left' && toSide === 'right') {
-    const midX = (from.x + to.x) / 2;
-    points.push({ x: midX, y: from.y });
-    points.push({ x: midX, y: to.y });
-  } else if (fromSide === 'bottom' && toSide === 'top') {
-    const midY = (from.y + to.y) / 2;
-    points.push({ x: from.x, y: midY });
-    points.push({ x: to.x, y: midY });
-  } else if (fromSide === 'top' && toSide === 'bottom') {
-    const midY = (from.y + to.y) / 2;
-    points.push({ x: from.x, y: midY });
-    points.push({ x: to.x, y: midY });
-  } else if (fromSide === 'right' || fromSide === 'left') {
-    // Horizontal start, vertical end
-    const extendX = from.x + (fromSide === 'right' ? offset : -offset);
-    points.push({ x: extendX, y: from.y });
-    points.push({ x: extendX, y: to.y });
-  } else {
-    // Vertical start, horizontal end
-    const extendY = from.y + (fromSide === 'bottom' ? offset : -offset);
-    points.push({ x: from.x, y: extendY });
-    points.push({ x: to.x, y: extendY });
-  }
+  // Position 40px along the line from start
+  const distanceAlongLine = 40;
+  const posX = startX + nx * distanceAlongLine;
+  const posY = startY + ny * distanceAlongLine;
   
-  points.push(to);
+  // Perpendicular offset
+  const perpOffset = 18;
+  const perpX = -ny * perpOffset;
+  const perpY = nx * perpOffset;
   
-  return points.map(p => `${p.x},${p.y}`).join(' ');
-}
-
-function getCardinalityPosition(edge: { x: number; y: number }, side: Side): { x: number; y: number } {
-  const offset = 25;
-  
-  switch (side) {
-    case 'right':
-      return { x: edge.x + offset, y: edge.y };
-    case 'left':
-      return { x: edge.x - offset, y: edge.y };
-    case 'bottom':
-      return { x: edge.x, y: edge.y + offset };
-    case 'top':
-      return { x: edge.x, y: edge.y - offset };
-  }
+  return {
+    x: posX + perpX,
+    y: posY + perpY
+  };
 }
 
 function getLabels(relationType: '1-1' | '1-N' | 'N-M') {

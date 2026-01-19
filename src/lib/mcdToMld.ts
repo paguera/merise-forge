@@ -69,62 +69,80 @@ export function transformMCDtoMLD(mcd: MeriseModel): MLDModel {
         type: '1-N',
       });
     } else if (relationType === '1-N') {
-      // Add FK to the N side
-      const nSideEntityId = isNSide(relation.cardinality2) ? relation.entity2Id : relation.entity1Id;
-      const oneSideEntity = isNSide(relation.cardinality2) ? entity1 : entity2;
+      // RÈGLE MERISE : La FK va toujours du côté N (enfant/many) vers le côté 1 (parent/one)
+      // Le côté N est celui dont la cardinalité se termine par 'n'
+      const isEntity2NSide = isNSide(relation.cardinality2);
       
-      const targetTable = tables.find((t) => t.id === nSideEntityId);
+      // L'entité côté N reçoit la FK qui référence l'entité côté 1
+      const nSideEntity = isEntity2NSide ? entity2 : entity1;
+      const oneSideEntity = isEntity2NSide ? entity1 : entity2;
+      
+      const targetTable = tables.find((t) => t.id === nSideEntity.id);
       if (targetTable) {
-        targetTable.columns.push({
-          id: `${relation.id}_fk`,
-          name: `${oneSideEntity.name.toLowerCase()}_id`,
-          type: 'INT',
-          isPrimaryKey: false,
-          isForeignKey: true,
-          references: {
-            table: oneSideEntity.name,
-            column: 'id',
-          },
-          isNullable: relation.cardinality1.startsWith('0') || relation.cardinality2.startsWith('0'),
-        });
+        // Éviter les doublons de FK
+        const fkName = `${oneSideEntity.name.toLowerCase()}_id`;
+        const existingFK = targetTable.columns.find(c => c.name === fkName && c.isForeignKey);
+        
+        if (!existingFK) {
+          targetTable.columns.push({
+            id: `${relation.id}_fk`,
+            name: fkName,
+            type: 'INT',
+            isPrimaryKey: false,
+            isForeignKey: true,
+            references: {
+              table: oneSideEntity.name,
+              column: 'id',
+            },
+            isNullable: isEntity2NSide 
+              ? relation.cardinality2.startsWith('0') 
+              : relation.cardinality1.startsWith('0'),
+          });
 
-        relations.push({
-          id: relation.id,
-          fromTable: targetTable.name,
-          fromColumn: `${oneSideEntity.name.toLowerCase()}_id`,
-          toTable: oneSideEntity.name,
-          toColumn: 'id',
-          type: '1-N',
-        });
+          relations.push({
+            id: relation.id,
+            fromTable: nSideEntity.name,
+            fromColumn: fkName,
+            toTable: oneSideEntity.name,
+            toColumn: 'id',
+            type: '1-N',
+          });
+        }
       }
     } else {
-      // 1-1 relation: add FK to either side (prefer the optional side)
-      const optionalSide = relation.cardinality1.startsWith('0') ? entity1 : entity2;
-      const requiredSide = relation.cardinality1.startsWith('0') ? entity2 : entity1;
+      // 1-1 relation: add FK to the optional side (0,1) or first entity if both mandatory
+      const isEntity1Optional = relation.cardinality1.startsWith('0');
+      const targetEntity = isEntity1Optional ? entity1 : entity2;
+      const referencedEntity = isEntity1Optional ? entity2 : entity1;
       
-      const targetTable = tables.find((t) => t.id === optionalSide.id);
+      const targetTable = tables.find((t) => t.id === targetEntity.id);
       if (targetTable) {
-        targetTable.columns.push({
-          id: `${relation.id}_fk`,
-          name: `${requiredSide.name.toLowerCase()}_id`,
-          type: 'INT',
-          isPrimaryKey: false,
-          isForeignKey: true,
-          references: {
-            table: requiredSide.name,
-            column: 'id',
-          },
-          isNullable: true,
-        });
+        const fkName = `${referencedEntity.name.toLowerCase()}_id`;
+        const existingFK = targetTable.columns.find(c => c.name === fkName && c.isForeignKey);
+        
+        if (!existingFK) {
+          targetTable.columns.push({
+            id: `${relation.id}_fk`,
+            name: fkName,
+            type: 'INT',
+            isPrimaryKey: false,
+            isForeignKey: true,
+            references: {
+              table: referencedEntity.name,
+              column: 'id',
+            },
+            isNullable: true,
+          });
 
-        relations.push({
-          id: relation.id,
-          fromTable: targetTable.name,
-          fromColumn: `${requiredSide.name.toLowerCase()}_id`,
-          toTable: requiredSide.name,
-          toColumn: 'id',
-          type: '1-1',
-        });
+          relations.push({
+            id: relation.id,
+            fromTable: targetEntity.name,
+            fromColumn: fkName,
+            toTable: referencedEntity.name,
+            toColumn: 'id',
+            type: '1-1',
+          });
+        }
       }
     }
   });
@@ -195,4 +213,3 @@ function createJunctionTable(relation: Relation, entity1: Entity, entity2: Entit
     position: { x: midX, y: midY },
   };
 }
-

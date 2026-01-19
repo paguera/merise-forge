@@ -11,10 +11,14 @@ import { useNavigate } from 'react-router-dom';
 import { SaveProjectDialog } from '@/components/dialogs/SaveProjectDialog';
 import { LoadProjectDialog } from '@/components/dialogs/LoadProjectDialog';
 import { CollaborationDialog } from '@/components/dialogs/CollaborationDialog';
-import { useRealtimeProject } from '@/hooks/useRealtimeProject';
+import type { useRealtimeProject } from '@/hooks/useRealtimeProject';
 import JSZip from 'jszip';
 
-export function Header() {
+interface HeaderProps {
+  realtime: ReturnType<typeof useRealtimeProject>;
+}
+
+export function Header({ realtime }: HeaderProps) {
   const navigate = useNavigate();
   const { viewMode, setViewMode, sqlDialect, setSqlDialect, generatedSQL, mldModel, model, addEntity, addRelation } = useMeriseStore();
   const { theme, toggleTheme } = useTheme();
@@ -22,7 +26,6 @@ export function Header() {
   const [loadOpen, setLoadOpen] = useState(false);
   const [collabOpen, setCollabOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const realtime = useRealtimeProject();
 
   const parseSQLFile = (sql: string) => {
     const entities: Entity[] = [];

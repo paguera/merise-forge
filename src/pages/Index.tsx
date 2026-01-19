@@ -5,12 +5,13 @@ import { MPDSidebar } from '@/components/sidebar/MPDSidebar';
 import { MCDCanvas } from '@/components/canvas/MCDCanvas';
 import { MLDCanvas } from '@/components/canvas/MLDCanvas';
 import { MPDCanvas } from '@/components/canvas/MPDCanvas';
+import { CollaboratorChat } from '@/components/chat/CollaboratorChat';
 import { useMeriseStore } from '@/hooks/useMeriseStore';
 import { useRealtimeProject } from '@/hooks/useRealtimeProject';
 
 const Index = () => {
   const { viewMode } = useMeriseStore();
-  const { users, updateCursor, connected } = useRealtimeProject();
+  const { users, updateCursor, connected, projectId, username, myColor } = useRealtimeProject();
 
   const handleCursorMove = connected ? updateCursor : undefined;
 
@@ -27,6 +28,13 @@ const Index = () => {
         {viewMode === 'MLD' && <MLDCanvas users={users} onCursorMove={handleCursorMove} />}
         {viewMode === 'MPD' && <MPDCanvas users={users} onCursorMove={handleCursorMove} />}
       </div>
+
+      <CollaboratorChat 
+        projectId={projectId} 
+        username={username} 
+        userColor={myColor}
+        connected={connected}
+      />
     </div>
   );
 };

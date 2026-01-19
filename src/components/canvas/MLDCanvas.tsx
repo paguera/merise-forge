@@ -1,15 +1,22 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useMeriseStore } from '@/hooks/useMeriseStore';
 import { TableNode } from './TableNode';
 import { MLDConnectionLine } from './MLDConnectionLine';
 import { ZoomControls } from './ZoomControls';
+import { CollaboratorCursors } from './CollaboratorCursors';
 import { useCanvasZoom } from '@/hooks/useCanvasZoom';
+import type { PresenceUser } from '@/hooks/useRealtimePresence';
 
 const TABLE_WIDTH = 180;
 const TABLE_HEADER_HEIGHT = 40;
 const TABLE_ROW_HEIGHT = 36;
 
-export function MLDCanvas() {
+interface Props {
+  users?: PresenceUser[];
+  onCursorMove?: (x: number, y: number) => void;
+}
+
+export function MLDCanvas({ users = [], onCursorMove }: Props) {
   const { mldModel } = useMeriseStore();
   const canvasRef = useRef<HTMLDivElement>(null);
   const { scale, position, zoomIn, zoomOut, resetZoom, handleWheel, startPan, movePan, endPan, isPanning } = useCanvasZoom();
@@ -21,6 +28,13 @@ export function MLDCanvas() {
       return () => canvas.removeEventListener('wheel', handleWheel);
     }
   }, [handleWheel]);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    movePan(e);
+    if (onCursorMove) {
+      onCursorMove(e.clientX, e.clientY);
+    }
+  }, [movePan, onCursorMove]);
 
   if (!mldModel) {
     return (
@@ -43,7 +57,7 @@ export function MLDCanvas() {
       className="flex-1 canvas-bg relative overflow-hidden min-h-[600px]"
       ref={canvasRef}
       onMouseDown={startPan}
-      onMouseMove={movePan}
+      onMouseMove={handleMouseMove}
       onMouseUp={endPan}
       onMouseLeave={endPan}
       style={{ cursor: isPanning ? 'grabbing' : 'default' }}
@@ -90,6 +104,7 @@ export function MLDCanvas() {
       </div>
 
       <ZoomControls scale={scale} onZoomIn={zoomIn} onZoomOut={zoomOut} onReset={resetZoom} />
+      <CollaboratorCursors users={users} />
     </div>
   );
 }

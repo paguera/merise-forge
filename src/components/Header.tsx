@@ -227,12 +227,12 @@ export function Header() {
   };
 
   const handleExportZip = async () => {
-    // Snapshot pour éviter toute "réinitialisation" (ex: recalcul MLD/SQL lors des changements d’onglet)
+    // Capture full snapshot BEFORE any view changes
     const snapshot = (() => {
       const s = useMeriseStore.getState();
       return {
-        model: s.model,
-        mldModel: s.mldModel,
+        model: JSON.parse(JSON.stringify(s.model)),
+        mldModel: s.mldModel ? JSON.parse(JSON.stringify(s.mldModel)) : null,
         viewMode: s.viewMode,
         sqlDialect: s.sqlDialect,
         selectedEntityId: s.selectedEntityId,
@@ -241,7 +241,7 @@ export function Header() {
       };
     })();
 
-    // Sauvegarde automatique au clic ZIP
+    // Backup to localStorage
     try {
       localStorage.setItem(
         'merise-last-zip-backup',
@@ -260,8 +260,15 @@ export function Header() {
       const views: ViewMode[] = ['MCD', 'MLD', 'MPD'];
 
       for (const view of views) {
-        setViewMode(view);
-        await new Promise((r) => setTimeout(r, 300));
+        // Directly set viewMode WITHOUT triggering transform (bypass setViewMode)
+        useMeriseStore.setState({ viewMode: view });
+        
+        // Ensure MLD model is preserved for MLD/MPD views
+        if ((view === 'MLD' || view === 'MPD') && snapshot.mldModel) {
+          useMeriseStore.setState({ mldModel: snapshot.mldModel });
+        }
+        
+        await new Promise((r) => setTimeout(r, 400));
 
         const canvas = document.getElementById('merise-canvas');
         if (canvas) {
@@ -274,9 +281,8 @@ export function Header() {
         }
       }
 
-      const latestSQL = useMeriseStore.getState().generatedSQL;
-      if (latestSQL) {
-        zip.file('schema.sql', latestSQL);
+      if (snapshot.generatedSQL) {
+        zip.file('schema.sql', snapshot.generatedSQL);
       }
 
       const blob = await zip.generateAsync({ type: 'blob' });
@@ -287,12 +293,12 @@ export function Header() {
       link.click();
       URL.revokeObjectURL(url);
 
-      toast.success('ZIP exporté avec succès (sauvegarde auto effectuée)');
+      toast.success('ZIP exporté avec succès');
     } catch (err) {
       console.error(err);
       toast.error("Erreur lors de l'export");
     } finally {
-      // Restaure l’état EXACT (sans déclencher transform/generate via setViewMode)
+      // Restore EXACT state from snapshot
       useMeriseStore.setState({
         model: snapshot.model,
         mldModel: snapshot.mldModel,
@@ -385,8 +391,11 @@ export function Header() {
         onJoin={realtime.joinProject}
         connected={realtime.connected}
         projectName={realtime.projectName}
+        username={realtime.username}
         onLeave={realtime.leaveProject}
         onPush={realtime.pushState}
+        users={realtime.users}
+        myColor={realtime.myColor}
       />
     </header>
   );

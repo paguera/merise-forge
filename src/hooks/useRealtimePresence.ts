@@ -37,6 +37,8 @@ export function useRealtimePresence(projectId: string | null, username: string) 
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const cursorRef = useRef<CursorPosition | null>(null);
   const initialSyncDone = useRef(false);
+  // Track users we've already notified about to prevent duplicate notifications
+  const notifiedUsers = useRef<Set<string>>(new Set());
 
   const updateCursor = useCallback((x: number, y: number) => {
     cursorRef.current = { x, y };
@@ -55,6 +57,7 @@ export function useRealtimePresence(projectId: string | null, username: string) 
     if (!projectId || !username) {
       setUsers([]);
       initialSyncDone.current = false;
+      notifiedUsers.current.clear();
       return;
     }
 
@@ -75,6 +78,10 @@ export function useRealtimePresence(projectId: string | null, username: string) 
           const presence = (presences as unknown[])[0] as PresenceUser;
           if (presence && presence.id !== myUserId) {
             presentUsers.push(presence);
+            // Mark existing users as already notified during initial sync
+            if (!initialSyncDone.current) {
+              notifiedUsers.current.add(presence.id);
+            }
           }
         });
         
@@ -82,10 +89,12 @@ export function useRealtimePresence(projectId: string | null, username: string) 
         initialSyncDone.current = true;
       })
       .on('presence', { event: 'join' }, ({ newPresences }) => {
-        // Play sound and show toast when someone joins (after initial sync)
+        // Play sound and show toast when someone NEW joins (after initial sync)
         if (initialSyncDone.current && newPresences.length > 0) {
           const joiner = newPresences[0] as unknown as PresenceUser;
-          if (joiner.id !== myUserId) {
+          // Only notify if we haven't notified about this user before
+          if (joiner.id !== myUserId && !notifiedUsers.current.has(joiner.id)) {
+            notifiedUsers.current.add(joiner.id);
             playNotificationSound('join');
             if (!getMuted()) {
               toast.success(`${joiner.username} a rejoint le projet`, {
@@ -96,13 +105,17 @@ export function useRealtimePresence(projectId: string | null, username: string) 
         }
       })
       .on('presence', { event: 'leave' }, ({ leftPresences }) => {
-        // Show toast when someone leaves
+        // Show toast when someone leaves and remove from notified set
         if (initialSyncDone.current && leftPresences.length > 0) {
           const leaver = leftPresences[0] as unknown as PresenceUser;
-          if (leaver.id !== myUserId && !getMuted()) {
-            toast.info(`${leaver.username} a quitté le projet`, {
-              duration: 3000,
-            });
+          if (leaver.id !== myUserId) {
+            // Remove from notified set so they can be notified again if they rejoin
+            notifiedUsers.current.delete(leaver.id);
+            if (!getMuted()) {
+              toast.info(`${leaver.username} a quitté le projet`, {
+                duration: 3000,
+              });
+            }
           }
         }
       })

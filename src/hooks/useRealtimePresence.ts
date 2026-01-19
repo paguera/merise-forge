@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { playNotificationSound } from '@/lib/notificationSound';
 
 interface CursorPosition {
   x: number;
@@ -34,6 +35,7 @@ export function useRealtimePresence(projectId: string | null, username: string) 
   const [myColor] = useState(() => getRandomColor());
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const cursorRef = useRef<CursorPosition | null>(null);
+  const initialSyncDone = useRef(false);
 
   const updateCursor = useCallback((x: number, y: number) => {
     cursorRef.current = { x, y };
@@ -51,6 +53,7 @@ export function useRealtimePresence(projectId: string | null, username: string) 
   useEffect(() => {
     if (!projectId || !username) {
       setUsers([]);
+      initialSyncDone.current = false;
       return;
     }
 
@@ -75,12 +78,19 @@ export function useRealtimePresence(projectId: string | null, username: string) 
         });
         
         setUsers(presentUsers);
+        initialSyncDone.current = true;
       })
       .on('presence', { event: 'join' }, ({ newPresences }) => {
-        console.log('User joined:', newPresences);
+        // Play sound when someone joins (after initial sync)
+        if (initialSyncDone.current && newPresences.length > 0) {
+          const joiner = newPresences[0] as unknown as PresenceUser;
+          if (joiner.id !== myUserId) {
+            playNotificationSound('join');
+          }
+        }
       })
-      .on('presence', { event: 'leave' }, ({ leftPresences }) => {
-        console.log('User left:', leftPresences);
+      .on('presence', { event: 'leave' }, () => {
+        // User left
       })
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {

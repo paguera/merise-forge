@@ -1,11 +1,14 @@
 import { useState, useRef, useEffect, KeyboardEvent } from 'react';
-import { MessageCircle, Send, X, Minimize2, Maximize2 } from 'lucide-react';
+import { MessageCircle, Send, X, Minimize2, Maximize2, Smile } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { useRealtimeChat, ChatMessage } from '@/hooks/useRealtimeChat';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { useRealtimeChat, ChatMessage, ChatReaction } from '@/hooks/useRealtimeChat';
 import { cn } from '@/lib/utils';
+
+const EMOJI_OPTIONS = ['👍', '❤️', '😂', '😮', '😢', '🎉'];
 
 interface Props {
   projectId: string | null;
@@ -22,7 +25,7 @@ export function CollaboratorChat({ projectId, username, userColor, connected }: 
   const scrollRef = useRef<HTMLDivElement>(null);
   const prevMessagesLength = useRef(0);
 
-  const { messages, loading, sendMessage } = useRealtimeChat(projectId, username, userColor);
+  const { messages, loading, sendMessage, toggleReaction, getReactionsForMessage } = useRealtimeChat(projectId, username, userColor);
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -142,6 +145,9 @@ export function CollaboratorChat({ projectId, username, userColor, connected }: 
                       message={msg}
                       isOwn={msg.username === username}
                       formatTime={formatTime}
+                      reactions={getReactionsForMessage(msg.id)}
+                      onToggleReaction={(emoji) => toggleReaction(msg.id, emoji)}
+                      currentUsername={username}
                     />
                   ))}
                 </div>
@@ -180,11 +186,27 @@ interface MessageBubbleProps {
   message: ChatMessage;
   isOwn: boolean;
   formatTime: (dateStr: string) => string;
+  reactions: ChatReaction[];
+  onToggleReaction: (emoji: string) => void;
+  currentUsername: string;
 }
 
-function MessageBubble({ message, isOwn, formatTime }: MessageBubbleProps) {
+function MessageBubble({ message, isOwn, formatTime, reactions, onToggleReaction, currentUsername }: MessageBubbleProps) {
+  // Group reactions by emoji
+  const groupedReactions = reactions.reduce((acc, r) => {
+    if (!acc[r.emoji]) {
+      acc[r.emoji] = { count: 0, users: [], hasCurrentUser: false };
+    }
+    acc[r.emoji].count++;
+    acc[r.emoji].users.push(r.username);
+    if (r.username === currentUsername) {
+      acc[r.emoji].hasCurrentUser = true;
+    }
+    return acc;
+  }, {} as Record<string, { count: number; users: string[]; hasCurrentUser: boolean }>);
+
   return (
-    <div className={cn("flex flex-col gap-1", isOwn ? "items-end" : "items-start")}>
+    <div className={cn("flex flex-col gap-1 group", isOwn ? "items-end" : "items-start")}>
       <div className="flex items-center gap-2">
         {!isOwn && (
           <span 
@@ -198,17 +220,74 @@ function MessageBubble({ message, isOwn, formatTime }: MessageBubbleProps) {
           {formatTime(message.created_at)}
         </span>
       </div>
-      <div
-        className={cn(
-          "px-3 py-2 rounded-2xl max-w-[85%] break-words text-sm",
-          isOwn
-            ? "bg-primary text-primary-foreground rounded-br-md"
-            : "bg-secondary text-secondary-foreground rounded-bl-md"
-        )}
-        style={!isOwn ? { borderLeft: `3px solid ${message.color}` } : undefined}
-      >
-        {message.message}
+      
+      <div className="relative">
+        <div
+          className={cn(
+            "px-3 py-2 rounded-2xl max-w-[85%] break-words text-sm",
+            isOwn
+              ? "bg-primary text-primary-foreground rounded-br-md"
+              : "bg-secondary text-secondary-foreground rounded-bl-md"
+          )}
+          style={!isOwn ? { borderLeft: `3px solid ${message.color}` } : undefined}
+        >
+          {message.message}
+        </div>
+
+        {/* Reaction button */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className={cn(
+                "absolute -right-2 -top-2 h-6 w-6 rounded-full bg-card border border-border shadow-sm",
+                "opacity-0 group-hover:opacity-100 transition-opacity"
+              )}
+            >
+              <Smile className="w-3 h-3" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-2" side="top">
+            <div className="flex gap-1">
+              {EMOJI_OPTIONS.map((emoji) => (
+                <Button
+                  key={emoji}
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 text-lg hover:bg-secondary"
+                  onClick={() => onToggleReaction(emoji)}
+                >
+                  {emoji}
+                </Button>
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
       </div>
+
+      {/* Display reactions */}
+      {Object.keys(groupedReactions).length > 0 && (
+        <div className="flex flex-wrap gap-1 mt-1">
+          {Object.entries(groupedReactions).map(([emoji, data]) => (
+            <button
+              key={emoji}
+              onClick={() => onToggleReaction(emoji)}
+              className={cn(
+                "inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs",
+                "border transition-colors",
+                data.hasCurrentUser
+                  ? "bg-primary/20 border-primary/40"
+                  : "bg-secondary/50 border-border hover:bg-secondary"
+              )}
+              title={data.users.join(', ')}
+            >
+              <span>{emoji}</span>
+              <span className="text-muted-foreground">{data.count}</span>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

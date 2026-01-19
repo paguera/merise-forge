@@ -114,7 +114,7 @@ export function MPDSidebar() {
           <textarea
             readOnly
             value={generatedSQL || '-- Aucun SQL généré'}
-            className="w-full bg-foreground text-background rounded-lg p-4 text-xs font-mono resize-none border-0 focus:outline-none focus:ring-2 focus:ring-primary min-h-[400px] h-[50vh]"
+            className="w-full bg-foreground text-background rounded-lg p-4 text-xs font-mono resize-none border-0 focus:outline-none focus:ring-2 focus:ring-primary flex-1 min-h-[520px]"
           />
         </div>
       </div>

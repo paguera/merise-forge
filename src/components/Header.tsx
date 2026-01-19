@@ -223,32 +223,58 @@ export function Header() {
   };
 
   const handleExportZip = async () => {
+    // Snapshot pour éviter toute "réinitialisation" (ex: recalcul MLD/SQL lors des changements d’onglet)
+    const snapshot = (() => {
+      const s = useMeriseStore.getState();
+      return {
+        model: s.model,
+        mldModel: s.mldModel,
+        viewMode: s.viewMode,
+        sqlDialect: s.sqlDialect,
+        selectedEntityId: s.selectedEntityId,
+        selectedRelationId: s.selectedRelationId,
+        generatedSQL: s.generatedSQL,
+      };
+    })();
+
+    // Sauvegarde automatique au clic ZIP
+    try {
+      localStorage.setItem(
+        'merise-last-zip-backup',
+        JSON.stringify({ ...snapshot, savedAt: new Date().toISOString() })
+      );
+    } catch {
+      // ignore
+    }
+
     const zip = new JSZip();
     const { toPng } = await import('html-to-image');
-    
+
     toast.info('Génération du ZIP en cours...');
-    
+
     try {
-      const currentView = viewMode;
       const views: ViewMode[] = ['MCD', 'MLD', 'MPD'];
-      
+
       for (const view of views) {
         setViewMode(view);
-        await new Promise(r => setTimeout(r, 300));
+        await new Promise((r) => setTimeout(r, 300));
+
         const canvas = document.getElementById('merise-canvas');
         if (canvas) {
-          const dataUrl = await toPng(canvas, { quality: 1, backgroundColor: theme === 'dark' ? '#1a1a2e' : '#e8eef5' });
+          const dataUrl = await toPng(canvas, {
+            quality: 1,
+            backgroundColor: theme === 'dark' ? '#1a1a2e' : '#e8eef5',
+          });
           const base64 = dataUrl.split(',')[1];
           zip.file(`${view.toLowerCase()}.png`, base64, { base64: true });
         }
       }
-      
-      setViewMode(currentView);
-      
-      if (generatedSQL) {
-        zip.file('schema.sql', generatedSQL);
+
+      const latestSQL = useMeriseStore.getState().generatedSQL;
+      if (latestSQL) {
+        zip.file('schema.sql', latestSQL);
       }
-      
+
       const blob = await zip.generateAsync({ type: 'blob' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -256,11 +282,22 @@ export function Header() {
       link.href = url;
       link.click();
       URL.revokeObjectURL(url);
-      
-      toast.success('ZIP exporté avec succès');
+
+      toast.success('ZIP exporté avec succès (sauvegarde auto effectuée)');
     } catch (err) {
       console.error(err);
       toast.error("Erreur lors de l'export");
+    } finally {
+      // Restaure l’état EXACT (sans déclencher transform/generate via setViewMode)
+      useMeriseStore.setState({
+        model: snapshot.model,
+        mldModel: snapshot.mldModel,
+        viewMode: snapshot.viewMode,
+        sqlDialect: snapshot.sqlDialect,
+        selectedEntityId: snapshot.selectedEntityId,
+        selectedRelationId: snapshot.selectedRelationId,
+        generatedSQL: snapshot.generatedSQL,
+      });
     }
   };
 

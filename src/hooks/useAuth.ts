@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
 
@@ -32,61 +32,72 @@ export function useAuth() {
   const isSuperAdmin = roles.some(r => r.role === 'super_admin');
   const isPremium = profile?.is_premium || (profile?.premium_until && new Date(profile.premium_until) > new Date());
 
+  const fetchUserData = useCallback(async (userId: string) => {
+    // Profile: avoid .single() to prevent 406 when the row doesn't exist yet
+    const { data: profileRows } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('user_id', userId)
+      .limit(1);
+
+    setProfile(((profileRows?.[0] as UserProfile) ?? null));
+
+    // Roles
+    const { data: rolesData } = await supabase
+      .from('user_roles')
+      .select('*')
+      .eq('user_id', userId);
+
+    setRoles((rolesData as UserRole[]) ?? []);
+  }, []);
+
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        // Defer fetching to avoid blocking
-        setTimeout(() => {
-          fetchUserData(session.user.id);
-        }, 0);
-      } else {
+    let isMounted = true;
+
+    const loadFromSession = async (sessionUser: User | null) => {
+      if (!isMounted) return;
+
+      setUser(sessionUser);
+
+      if (!sessionUser) {
         setProfile(null);
         setRoles([]);
+        setLoading(false);
+        return;
       }
-      setLoading(false);
+
+      // IMPORTANT: keep loading=true until roles are fetched,
+      // otherwise pages that depend on isAdmin can redirect too early.
+      setLoading(true);
+      try {
+        await fetchUserData(sessionUser.id);
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    // Set up auth state listener FIRST
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      void loadFromSession(session?.user ?? null);
     });
 
     // Then check current session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchUserData(session.user.id);
-      }
-      setLoading(false);
-    });
+    supabase.auth
+      .getSession()
+      .then(({ data: { session } }) => loadFromSession(session?.user ?? null))
+      .catch(() => {
+        if (isMounted) setLoading(false);
+      });
 
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const fetchUserData = async (userId: string) => {
-    try {
-      // Fetch profile
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
-      
-      if (profileData) {
-        setProfile(profileData as UserProfile);
-      }
-
-      // Fetch roles
-      const { data: rolesData } = await supabase
-        .from('user_roles')
-        .select('*')
-        .eq('user_id', userId);
-      
-      if (rolesData) {
-        setRoles(rolesData as UserRole[]);
-      }
-    } catch (error) {
-      console.error('Error fetching user data:', error);
-    }
-  };
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, [fetchUserData]);
 
   const signOut = async () => {
     await supabase.auth.signOut();

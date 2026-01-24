@@ -79,6 +79,7 @@ export function useSyncHistory(projectId: string | null, isAdmin: boolean) {
         changes_detail: JSON.parse(JSON.stringify(entry.changes_detail)),
         snapshot: JSON.parse(JSON.stringify(entry.snapshot)),
         status: entry.status,
+        comment: entry.comment || null,
       }])
       .select()
       .single();
@@ -90,6 +91,22 @@ export function useSyncHistory(projectId: string | null, isAdmin: boolean) {
 
     return data;
   }, [projectId]);
+
+  // Add comment to entry
+  const addComment = useCallback(async (entryId: string, comment: string) => {
+    const { error } = await supabase
+      .from('sync_history')
+      .update({ comment })
+      .eq('id', entryId);
+
+    if (error) {
+      toast.error('Erreur lors de l\'ajout du commentaire');
+      return false;
+    }
+
+    toast.success('Commentaire ajouté');
+    return true;
+  }, []);
 
   // Approve entry (admin only)
   const approveEntry = useCallback(async (entryId: string, reviewerUsername: string) => {
@@ -148,6 +165,7 @@ export function useSyncHistory(projectId: string | null, isAdmin: boolean) {
     addHistoryEntry,
     approveEntry,
     rejectEntry,
+    addComment,
     refresh: fetchHistory,
   };
 }

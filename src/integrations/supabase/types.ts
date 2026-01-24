@@ -154,6 +154,7 @@ export type Database = {
           action_summary: string
           action_type: string
           changes_detail: Json
+          comment: string | null
           created_at: string
           id: string
           project_id: string
@@ -168,6 +169,7 @@ export type Database = {
           action_summary: string
           action_type: string
           changes_detail?: Json
+          comment?: string | null
           created_at?: string
           id?: string
           project_id: string
@@ -182,6 +184,7 @@ export type Database = {
           action_summary?: string
           action_type?: string
           changes_detail?: Json
+          comment?: string | null
           created_at?: string
           id?: string
           project_id?: string

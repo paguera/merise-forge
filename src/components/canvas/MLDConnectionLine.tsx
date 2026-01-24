@@ -37,43 +37,65 @@ export function MLDConnectionLine({
 
   const labels = getLabels(relationType);
 
+  // Calculate arrow position and angle for direction indicator
+  const midX = (fromEdge.x + toEdge.x) / 2;
+  const midY = (fromEdge.y + toEdge.y) / 2;
+  const angle = Math.atan2(toEdge.y - fromEdge.y, toEdge.x - fromEdge.x) * (180 / Math.PI);
+
   return (
     <g>
-      {/* Direct connection line */}
+      {/* Direct connection line with improved styling */}
       <line
         x1={fromEdge.x}
         y1={fromEdge.y}
         x2={toEdge.x}
         y2={toEdge.y}
         stroke="hsl(var(--primary))"
-        strokeWidth="2"
+        strokeWidth="2.5"
         strokeLinecap="round"
       />
       
-      {/* Connection point circles */}
-      <circle cx={fromEdge.x} cy={fromEdge.y} r="5" fill="hsl(var(--primary))" />
-      <circle cx={toEdge.x} cy={toEdge.y} r="5" fill="hsl(var(--primary))" />
+      {/* Direction arrow in the middle */}
+      <g transform={`translate(${midX}, ${midY}) rotate(${angle})`}>
+        <path
+          d="M -5 -6 L 5 0 L -5 6"
+          stroke="hsl(var(--primary))"
+          strokeWidth="2.5"
+          fill="none"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </g>
       
-      {/* Cardinality labels */}
+      {/* Connection point circles - improved with inner circle */}
+      <circle cx={fromEdge.x} cy={fromEdge.y} r="6" fill="hsl(var(--primary))" />
+      <circle cx={fromEdge.x} cy={fromEdge.y} r="3" fill="hsl(var(--background))" />
+      
+      <circle cx={toEdge.x} cy={toEdge.y} r="6" fill="hsl(var(--primary))" />
+      <circle cx={toEdge.x} cy={toEdge.y} r="3" fill="hsl(var(--background))" />
+      
+      {/* Cardinality labels with improved styling */}
       <g>
         <rect
-          x={labelFromPos.x - 14}
-          y={labelFromPos.y - 12}
-          width="28"
-          height="24"
+          x={labelFromPos.x - 16}
+          y={labelFromPos.y - 14}
+          width="32"
+          height="28"
           rx="6"
           fill="hsl(var(--destructive))"
           stroke="hsl(var(--background))"
           strokeWidth="2"
+          filter="drop-shadow(0 2px 4px rgba(0,0,0,0.15))"
         />
         <text
           x={labelFromPos.x}
           y={labelFromPos.y}
           fill="white"
-          fontSize="13"
+          fontSize="14"
           fontWeight="bold"
           textAnchor="middle"
           dominantBaseline="middle"
+          fontFamily="system-ui, sans-serif"
         >
           {labels.from}
         </text>
@@ -81,23 +103,25 @@ export function MLDConnectionLine({
       
       <g>
         <rect
-          x={labelToPos.x - 14}
-          y={labelToPos.y - 12}
-          width="28"
-          height="24"
+          x={labelToPos.x - 16}
+          y={labelToPos.y - 14}
+          width="32"
+          height="28"
           rx="6"
           fill="hsl(var(--destructive))"
           stroke="hsl(var(--background))"
           strokeWidth="2"
+          filter="drop-shadow(0 2px 4px rgba(0,0,0,0.15))"
         />
         <text
           x={labelToPos.x}
           y={labelToPos.y}
           fill="white"
-          fontSize="13"
+          fontSize="14"
           fontWeight="bold"
           textAnchor="middle"
           dominantBaseline="middle"
+          fontFamily="system-ui, sans-serif"
         >
           {labels.to}
         </text>
@@ -158,13 +182,13 @@ function getCardinalityPosition(
   const nx = dx / len;
   const ny = dy / len;
   
-  // Position 40px along the line from start
-  const distanceAlongLine = 40;
+  // Position 45px along the line from start
+  const distanceAlongLine = 45;
   const posX = startX + nx * distanceAlongLine;
   const posY = startY + ny * distanceAlongLine;
   
   // Perpendicular offset
-  const perpOffset = 18;
+  const perpOffset = 22;
   const perpX = -ny * perpOffset;
   const perpY = nx * perpOffset;
   

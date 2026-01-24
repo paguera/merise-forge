@@ -1,11 +1,14 @@
 import { useState, useRef } from 'react';
-import { Database, Moon, Sun, Save, FolderOpen, Archive, Upload, Users, Music, History, Layers, Shield, LogIn } from 'lucide-react';
+import { Database, Moon, Sun, Save, FolderOpen, Archive, Upload, Users, Music, History, Layers, Shield, LogIn, User, LogOut, Crown, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useMeriseStore } from '@/hooks/useMeriseStore';
 import { useTheme } from '@/hooks/useTheme';
+import { useAuth } from '@/hooks/useAuth';
 import { ViewMode, SQLDialect, Entity, Relation, Attribute } from '@/types/merise';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
@@ -14,6 +17,8 @@ import { LoadProjectDialog } from '@/components/dialogs/LoadProjectDialog';
 import { CollaborationDialog } from '@/components/dialogs/CollaborationDialog';
 import { SyncHistoryDialog } from '@/components/dialogs/SyncHistoryDialog';
 import { SchemasDialog } from '@/components/dialogs/SchemasDialog';
+import { PremiumDialog } from '@/components/dialogs/PremiumDialog';
+import { UserProfileDialog } from '@/components/dialogs/UserProfileDialog';
 import type { useRealtimeProject } from '@/hooks/useRealtimeProject';
 import JSZip from 'jszip';
 
@@ -25,11 +30,14 @@ export function Header({ realtime }: HeaderProps) {
   const navigate = useNavigate();
   const { viewMode, setViewMode, sqlDialect, setSqlDialect, generatedSQL, mldModel, model, addEntity, addRelation } = useMeriseStore();
   const { theme, cycleTheme } = useTheme();
+  const { user, profile, roles, isAdmin, isSuperAdmin, isPremium, signOut, updateProfile, refreshProfile } = useAuth();
   const [saveOpen, setSaveOpen] = useState(false);
   const [loadOpen, setLoadOpen] = useState(false);
   const [collabOpen, setCollabOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [schemasOpen, setSchemasOpen] = useState(false);
+  const [premiumOpen, setPremiumOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const parseSQLFile = (sql: string) => {
@@ -309,6 +317,12 @@ export function Header({ realtime }: HeaderProps) {
   };
 
   const handleExportZip = async () => {
+    // Check premium status for ZIP export
+    if (!isPremium) {
+      setPremiumOpen(true);
+      return;
+    }
+
     // Set exporting flag to prevent canvas zoom reset
     useMeriseStore.setState({ isExporting: true });
     
@@ -496,9 +510,66 @@ export function Header({ realtime }: HeaderProps) {
         <Button variant="ghost" size="icon" onClick={() => setLoadOpen(true)} title="Charger">
           <FolderOpen className="w-5 h-5" />
         </Button>
-        <Button variant="ghost" size="icon" onClick={() => navigate('/auth')} title="Connexion">
-          <LogIn className="w-5 h-5" />
-        </Button>
+
+        {/* User menu or Login button */}
+        {user ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="relative">
+                <Avatar className="w-7 h-7">
+                  <AvatarImage src={profile?.avatar_url || undefined} />
+                  <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                    {profile?.first_name?.charAt(0) || profile?.email?.charAt(0).toUpperCase() || 'U'}
+                  </AvatarFallback>
+                </Avatar>
+                {isPremium && (
+                  <Crown className="w-3 h-3 text-amber-500 absolute -top-1 -right-1" />
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <div className="px-2 py-1.5">
+                <p className="text-sm font-medium">{profile?.first_name || profile?.email?.split('@')[0]}</p>
+                <p className="text-xs text-muted-foreground">{profile?.email}</p>
+              </div>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => setProfileOpen(true)}>
+                <User className="w-4 h-4 mr-2" />
+                Mon Profil
+              </DropdownMenuItem>
+              {isPremium ? (
+                <DropdownMenuItem className="text-amber-600">
+                  <Crown className="w-4 h-4 mr-2" />
+                  Premium actif
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem onClick={() => setPremiumOpen(true)}>
+                  <Crown className="w-4 h-4 mr-2 text-amber-500" />
+                  Passer Premium
+                </DropdownMenuItem>
+              )}
+              {isAdmin && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate('/admin')}>
+                    {isSuperAdmin ? <ShieldCheck className="w-4 h-4 mr-2 text-amber-500" /> : <Shield className="w-4 h-4 mr-2" />}
+                    Dashboard Admin
+                  </DropdownMenuItem>
+                </>
+              )}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={signOut} className="text-destructive">
+                <LogOut className="w-4 h-4 mr-2" />
+                Déconnexion
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <Button variant="ghost" size="icon" onClick={() => navigate('/auth')} title="Connexion">
+            <LogIn className="w-5 h-5" />
+          </Button>
+        )}
+
         <Button variant="ghost" size="icon" onClick={cycleTheme} title={`Thème: ${theme}`}>
           {theme === 'dark' ? <Sun className="w-5 h-5" /> : theme === 'spotify' ? <Music className="w-5 h-5 text-primary" /> : <Moon className="w-5 h-5" />}
         </Button>
@@ -552,9 +623,12 @@ export function Header({ realtime }: HeaderProps) {
           </Badge>
         )}
 
-        <Button variant="secondary" onClick={handleExportZip} disabled={!mldModel}>
+        <Button variant="secondary" onClick={handleExportZip} disabled={!mldModel} className="relative">
           <Archive className="w-4 h-4 mr-2" />
           ZIP
+          {!isPremium && (
+            <Crown className="w-3 h-3 text-amber-500 absolute -top-1 -right-1" />
+          )}
         </Button>
       </div>
 
@@ -601,6 +675,23 @@ export function Header({ realtime }: HeaderProps) {
         onUpdateSchema={realtime.projectSchemas.updateCurrentSchema}
         onDeleteSchema={realtime.projectSchemas.deleteSchema}
         onRenameSchema={realtime.projectSchemas.renameSchema}
+      />
+      <PremiumDialog
+        open={premiumOpen}
+        onOpenChange={setPremiumOpen}
+        userId={user?.id}
+        onSuccess={refreshProfile}
+      />
+      <UserProfileDialog
+        open={profileOpen}
+        onOpenChange={setProfileOpen}
+        profile={profile}
+        roles={roles}
+        onUpdateProfile={updateProfile}
+        onOpenPremium={() => {
+          setProfileOpen(false);
+          setPremiumOpen(true);
+        }}
       />
     </header>
   );

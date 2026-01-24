@@ -1,8 +1,9 @@
 import { useState, useRef } from 'react';
-import { Database, Moon, Sun, Info, Save, FolderOpen, Archive, Upload, Users, Music } from 'lucide-react';
+import { Database, Moon, Sun, Info, Save, FolderOpen, Archive, Upload, Users, Music, History, Layers, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { useMeriseStore } from '@/hooks/useMeriseStore';
 import { useTheme } from '@/hooks/useTheme';
 import { ViewMode, SQLDialect, Entity, Relation, Attribute } from '@/types/merise';
@@ -11,6 +12,8 @@ import { useNavigate } from 'react-router-dom';
 import { SaveProjectDialog } from '@/components/dialogs/SaveProjectDialog';
 import { LoadProjectDialog } from '@/components/dialogs/LoadProjectDialog';
 import { CollaborationDialog } from '@/components/dialogs/CollaborationDialog';
+import { SyncHistoryDialog } from '@/components/dialogs/SyncHistoryDialog';
+import { SchemasDialog } from '@/components/dialogs/SchemasDialog';
 import type { useRealtimeProject } from '@/hooks/useRealtimeProject';
 import JSZip from 'jszip';
 
@@ -25,6 +28,8 @@ export function Header({ realtime }: HeaderProps) {
   const [saveOpen, setSaveOpen] = useState(false);
   const [loadOpen, setLoadOpen] = useState(false);
   const [collabOpen, setCollabOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [schemasOpen, setSchemasOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const parseSQLFile = (sql: string) => {
@@ -505,6 +510,48 @@ export function Header({ realtime }: HeaderProps) {
         >
           <Users className="w-5 h-5" />
         </Button>
+
+        {/* History button - only when connected */}
+        {realtime.connected && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setHistoryOpen(true)}
+            title="Historique des synchros"
+            className="relative"
+          >
+            <History className="w-5 h-5" />
+            {realtime.syncHistory.pendingCount > 0 && (
+              <Badge 
+                variant="destructive" 
+                className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+              >
+                {realtime.syncHistory.pendingCount}
+              </Badge>
+            )}
+          </Button>
+        )}
+
+        {/* Schemas button - only when connected */}
+        {realtime.connected && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setSchemasOpen(true)}
+            title="Gérer les schémas"
+          >
+            <Layers className="w-5 h-5" />
+          </Button>
+        )}
+
+        {/* Admin badge */}
+        {realtime.connected && realtime.isAdmin && (
+          <Badge variant="outline" className="gap-1 bg-primary/10 border-primary/30">
+            <Shield className="w-3 h-3" />
+            Admin
+          </Badge>
+        )}
+
         <Button variant="secondary" onClick={handleExportZip} disabled={!mldModel}>
           <Archive className="w-4 h-4 mr-2" />
           ZIP
@@ -530,6 +577,27 @@ export function Header({ realtime }: HeaderProps) {
         onPush={realtime.pushState}
         users={realtime.users}
         myColor={realtime.myColor}
+      />
+      <SyncHistoryDialog
+        open={historyOpen}
+        onOpenChange={setHistoryOpen}
+        history={realtime.syncHistory.history}
+        pendingCount={realtime.syncHistory.pendingCount}
+        isAdmin={realtime.isAdmin}
+        currentUsername={realtime.username}
+        onApprove={(id) => realtime.syncHistory.approveEntry(id, realtime.username)}
+        onReject={(id) => realtime.syncHistory.rejectEntry(id, realtime.username)}
+      />
+      <SchemasDialog
+        open={schemasOpen}
+        onOpenChange={setSchemasOpen}
+        schemas={realtime.projectSchemas.schemas}
+        currentSchemaId={realtime.projectSchemas.currentSchemaId}
+        onCreateSchema={realtime.projectSchemas.createSchema}
+        onLoadSchema={realtime.projectSchemas.loadSchema}
+        onUpdateSchema={realtime.projectSchemas.updateCurrentSchema}
+        onDeleteSchema={realtime.projectSchemas.deleteSchema}
+        onRenameSchema={realtime.projectSchemas.renameSchema}
       />
     </header>
   );

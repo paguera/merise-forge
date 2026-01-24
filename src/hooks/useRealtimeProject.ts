@@ -1,6 +1,8 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useMeriseStore } from './useMeriseStore';
+import { useSyncHistory } from './useSyncHistory';
+import { useProjectSchemas } from './useProjectSchemas';
 import { toast } from 'sonner';
 import type { MeriseModel, MLDModel, SQLDialect } from '@/types/merise';
 import { useRealtimePresence, PresenceUser } from './useRealtimePresence';
@@ -18,36 +20,82 @@ export function useRealtimeProject() {
   const [username, setUsername] = useState<string>('');
   const [syncing, setSyncing] = useState(false);
   const [connected, setConnected] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [creatorId, setCreatorId] = useState<string | null>(null);
   const ignoreNextRemote = useRef(false);
   const autoSyncEnabled = useRef(true);
+  const previousState = useRef<{ model: MeriseModel; mldModel: MLDModel | null } | null>(null);
 
   // Presence hook
   const presence = useRealtimePresence(projectId, username);
+
+  // Sync history hook
+  const syncHistory = useSyncHistory(projectId, isAdmin);
+
+  // Project schemas hook
+  const projectSchemas = useProjectSchemas(projectId, username);
+
+  // Track changes for history
+  const trackChange = useCallback(async (
+    actionType: string,
+    actionSummary: string,
+    changeDetail: Record<string, unknown>
+  ) => {
+    if (!projectId || !username) return;
+
+    const currentState = useMeriseStore.getState();
+    
+    await syncHistory.addHistoryEntry({
+      project_id: projectId,
+      schema_id: projectSchemas.currentSchemaId,
+      username,
+      action_type: actionType,
+      action_summary: actionSummary,
+      changes_detail: {
+        ...changeDetail,
+        before: previousState.current,
+      },
+      snapshot: {
+        model: currentState.model,
+        mldModel: currentState.mldModel,
+      },
+      status: isAdmin ? 'approved' : 'pending',
+    });
+
+    previousState.current = {
+      model: JSON.parse(JSON.stringify(currentState.model)),
+      mldModel: currentState.mldModel ? JSON.parse(JSON.stringify(currentState.mldModel)) : null,
+    };
+  }, [projectId, username, isAdmin, syncHistory, projectSchemas.currentSchemaId]);
 
   // Auto-sync: subscribe to store changes and push automatically
   useEffect(() => {
     if (!projectId || !connected) return;
 
+    let timeout: NodeJS.Timeout;
+
     const unsubscribe = useMeriseStore.subscribe((state, prevState) => {
       if (!autoSyncEnabled.current) return;
       
       // Check if relevant state changed
-      const changed = 
-        JSON.stringify(state.model) !== JSON.stringify(prevState.model) ||
-        JSON.stringify(state.mldModel) !== JSON.stringify(prevState.mldModel) ||
-        state.sqlDialect !== prevState.sqlDialect ||
-        state.generatedSQL !== prevState.generatedSQL;
+      const modelChanged = JSON.stringify(state.model) !== JSON.stringify(prevState.model);
+      const mldChanged = JSON.stringify(state.mldModel) !== JSON.stringify(prevState.mldModel);
+      const dialectChanged = state.sqlDialect !== prevState.sqlDialect;
+      const sqlChanged = state.generatedSQL !== prevState.generatedSQL;
 
-      if (changed) {
+      if (modelChanged || mldChanged || dialectChanged || sqlChanged) {
         // Debounce auto-sync
-        const timeout = setTimeout(() => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
           pushStateInternal();
         }, 500);
-        return () => clearTimeout(timeout);
       }
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      clearTimeout(timeout);
+    };
   }, [projectId, connected]);
 
   // Join an existing project or create a new one
@@ -61,12 +109,17 @@ export function useRealtimeProject() {
         .select('*')
         .eq('name', name)
         .limit(1)
-        .single();
+        .maybeSingle();
 
       let pid: string;
+      let userIsAdmin = false;
 
       if (existing) {
         pid = existing.id;
+        // Check if user is creator (admin)
+        userIsAdmin = existing.creator_id === user;
+        setCreatorId(existing.creator_id);
+        
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const projectData = existing.data as any as ProjectData;
         autoSyncEnabled.current = false;
@@ -76,9 +129,17 @@ export function useRealtimeProject() {
           sqlDialect: projectData?.sqlDialect ?? 'MariaDB',
           generatedSQL: projectData?.generatedSQL ?? '',
         });
+        
+        // Store initial state for tracking
+        previousState.current = {
+          model: JSON.parse(JSON.stringify(projectData?.model ?? { entities: [], relations: [] })),
+          mldModel: projectData?.mldModel ? JSON.parse(JSON.stringify(projectData.mldModel)) : null,
+        };
+        
         setTimeout(() => { autoSyncEnabled.current = true; }, 100);
-        toast.success(`Rejoint le projet "${name}" en tant que ${user}`);
+        toast.success(`Rejoint le projet "${name}" en tant que ${user}${userIsAdmin ? ' (Admin)' : ''}`);
       } else {
+        // Create new project - creator becomes admin
         const currentState = useMeriseStore.getState();
         const payloadObj = JSON.parse(JSON.stringify({
           model: currentState.model,
@@ -88,18 +149,32 @@ export function useRealtimeProject() {
         }));
         const { data: created, error } = await supabase
           .from('projects')
-          .insert([{ name, data: payloadObj }])
+          .insert([{ 
+            name, 
+            data: payloadObj,
+            creator_id: user, // Set creator as admin
+          }])
           .select()
           .single();
 
         if (error || !created) throw error;
         pid = created.id;
-        toast.success(`Projet "${name}" créé par ${user}`);
+        userIsAdmin = true;
+        setCreatorId(user);
+        
+        // Store initial state
+        previousState.current = {
+          model: JSON.parse(JSON.stringify(currentState.model)),
+          mldModel: currentState.mldModel ? JSON.parse(JSON.stringify(currentState.mldModel)) : null,
+        };
+        
+        toast.success(`Projet "${name}" créé par ${user} (Admin)`);
       }
 
       setProjectId(pid);
       setProjectName(name);
       setConnected(true);
+      setIsAdmin(userIsAdmin);
     } catch (err) {
       console.error(err);
       toast.error('Erreur lors de la connexion au projet');
@@ -176,6 +251,9 @@ export function useRealtimeProject() {
     setProjectName('');
     setUsername('');
     setConnected(false);
+    setIsAdmin(false);
+    setCreatorId(null);
+    previousState.current = null;
     toast.info('Déconnecté du projet partagé');
   }, []);
 
@@ -185,12 +263,19 @@ export function useRealtimeProject() {
     username,
     connected, 
     syncing, 
+    isAdmin,
+    creatorId,
     joinProject, 
     pushState, 
     leaveProject,
+    trackChange,
     // Presence
     users: presence.users as PresenceUser[],
     myColor: presence.myColor,
     updateCursor: presence.updateCursor,
+    // Sync history
+    syncHistory,
+    // Schemas
+    projectSchemas,
   };
 }

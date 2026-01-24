@@ -26,6 +26,7 @@ interface MeriseStore {
   addAttribute: (entityId: string, attribute: Attribute) => void;
   updateAttribute: (entityId: string, attributeId: string, updates: Partial<Attribute>) => void;
   removeAttribute: (entityId: string, attributeId: string) => void;
+  reorderAttributes: (entityId: string, fromIndex: number, toIndex: number) => void;
   
   // Relation actions
   addRelation: (relation: Relation) => void;
@@ -142,6 +143,19 @@ export const useMeriseStore = create<MeriseStore>()(
           ? { ...e, attributes: e.attributes.filter((a) => a.id !== attributeId) }
           : e
       ),
+    },
+  })),
+
+  reorderAttributes: (entityId, fromIndex, toIndex) => set((state) => ({
+    model: {
+      ...state.model,
+      entities: state.model.entities.map((e) => {
+        if (e.id !== entityId) return e;
+        const newAttributes = [...e.attributes];
+        const [movedItem] = newAttributes.splice(fromIndex, 1);
+        newAttributes.splice(toIndex, 0, movedItem);
+        return { ...e, attributes: newAttributes };
+      }),
     },
   })),
 

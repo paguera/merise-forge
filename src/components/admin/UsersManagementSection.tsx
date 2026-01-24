@@ -8,7 +8,7 @@ import {
   User, 
   Mail,
   Calendar,
-  Check
+  Lock
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -21,6 +21,7 @@ import type { AdminUser } from '@/hooks/useAdminDashboard';
 interface UsersManagementSectionProps {
   users: AdminUser[];
   isSuperAdmin: boolean;
+  currentUserId: string;
   onUpdateRole: (userId: string, newRole: 'user' | 'admin' | 'super_admin') => Promise<{ error: any }>;
   onTogglePremium: (userId: string, isPremium: boolean) => Promise<{ error: any }>;
 }
@@ -28,6 +29,7 @@ interface UsersManagementSectionProps {
 export function UsersManagementSection({
   users,
   isSuperAdmin,
+  currentUserId,
   onUpdateRole,
   onTogglePremium,
 }: UsersManagementSectionProps) {
@@ -50,6 +52,12 @@ export function UsersManagementSection({
   const handleRoleChange = async (userId: string, targetRole: 'admin' | 'super_admin', checked: boolean) => {
     if (!isSuperAdmin) {
       toast.error('Seuls les Super Admins peuvent modifier les rôles');
+      return;
+    }
+
+    // Prevent changing own role
+    if (userId === currentUserId) {
+      toast.error('Vous ne pouvez pas modifier votre propre rôle');
       return;
     }
 
@@ -94,6 +102,8 @@ export function UsersManagementSection({
     }
     return user.email.charAt(0).toUpperCase();
   };
+
+  const isCurrentUser = (userId: string) => userId === currentUserId;
 
   return (
     <div className="space-y-6">
@@ -167,6 +177,7 @@ export function UsersManagementSection({
         {filteredUsers.map((user, index) => {
           const role = getRoleValue(user.roles);
           const isPremium = user.is_premium || (user.premium_until && new Date(user.premium_until) > new Date());
+          const isSelf = isCurrentUser(user.user_id);
 
           return (
             <motion.div
@@ -175,7 +186,7 @@ export function UsersManagementSection({
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.03 }}
             >
-              <Card className={`relative overflow-hidden ${updating === user.user_id ? 'opacity-50' : ''}`}>
+              <Card className={`relative overflow-hidden ${updating === user.user_id ? 'opacity-50' : ''} ${isSelf ? 'ring-2 ring-primary/50' : ''}`}>
                 {/* Role indicator stripe */}
                 <div
                   className={`absolute top-0 left-0 w-full h-1 ${
@@ -186,6 +197,13 @@ export function UsersManagementSection({
                       : 'bg-muted'
                   }`}
                 />
+
+                {/* Self indicator */}
+                {isSelf && (
+                  <Badge className="absolute top-3 right-3 gap-1 bg-primary/20 text-primary text-xs">
+                    C'est vous
+                  </Badge>
+                )}
 
                 <CardContent className="p-4 pt-5">
                   <div className="flex items-start gap-4">
@@ -242,6 +260,7 @@ export function UsersManagementSection({
                   {/* Role checkboxes - Super Admin only */}
                   {isSuperAdmin && (
                     <div className="mt-4 pt-4 border-t space-y-3">
+                      {/* Super Admin role - disabled for self */}
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <Checkbox
@@ -250,18 +269,20 @@ export function UsersManagementSection({
                             onCheckedChange={(checked) =>
                               handleRoleChange(user.user_id, 'super_admin', !!checked)
                             }
-                            disabled={updating === user.user_id}
+                            disabled={updating === user.user_id || isSelf}
                           />
                           <label
                             htmlFor={`sa-${user.id}`}
-                            className="text-sm flex items-center gap-1 cursor-pointer"
+                            className={`text-sm flex items-center gap-1 ${isSelf ? 'text-muted-foreground' : 'cursor-pointer'}`}
                           >
                             <ShieldCheck className="w-4 h-4 text-amber-500" />
                             Super Admin
+                            {isSelf && <Lock className="w-3 h-3 ml-1" />}
                           </label>
                         </div>
                       </div>
 
+                      {/* Admin role - disabled for self */}
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <Checkbox
@@ -270,18 +291,20 @@ export function UsersManagementSection({
                             onCheckedChange={(checked) =>
                               handleRoleChange(user.user_id, 'admin', !!checked)
                             }
-                            disabled={updating === user.user_id || role === 'super_admin'}
+                            disabled={updating === user.user_id || role === 'super_admin' || isSelf}
                           />
                           <label
                             htmlFor={`admin-${user.id}`}
-                            className="text-sm flex items-center gap-1 cursor-pointer"
+                            className={`text-sm flex items-center gap-1 ${isSelf ? 'text-muted-foreground' : 'cursor-pointer'}`}
                           >
                             <Shield className="w-4 h-4 text-blue-500" />
                             Admin
+                            {isSelf && <Lock className="w-3 h-3 ml-1" />}
                           </label>
                         </div>
                       </div>
 
+                      {/* Premium - allowed for self */}
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <Checkbox

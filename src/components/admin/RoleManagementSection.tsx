@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Users, ShieldCheck, Shield, User as UserIcon, Search, Crown, Sparkles } from 'lucide-react';
+import { Users, ShieldCheck, Shield, User as UserIcon, Search, Crown, Sparkles, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,6 +12,7 @@ import type { AdminUser } from '@/hooks/useAdminDashboard';
 interface RoleManagementSectionProps {
   users: AdminUser[];
   isSuperAdmin: boolean;
+  currentUserId: string;
   onUpdateRole: (userId: string, newRole: 'user' | 'admin' | 'super_admin') => Promise<{ error: any }>;
   onTogglePremium: (userId: string, isPremium: boolean) => Promise<{ error: any }>;
 }
@@ -48,7 +49,8 @@ const ROLE_DESCRIPTIONS = {
 
 export function RoleManagementSection({ 
   users, 
-  isSuperAdmin, 
+  isSuperAdmin,
+  currentUserId,
   onUpdateRole,
   onTogglePremium 
 }: RoleManagementSectionProps) {
@@ -67,9 +69,17 @@ export function RoleManagementSection({
     return 'user';
   };
 
+  const isCurrentUser = (userId: string) => userId === currentUserId;
+
   const handleRoleToggle = async (userId: string, targetRole: 'admin' | 'super_admin', checked: boolean) => {
     if (!isSuperAdmin) {
       toast.error('Seuls les Super Admins peuvent modifier les rôles');
+      return;
+    }
+
+    // Prevent changing own role
+    if (isCurrentUser(userId)) {
+      toast.error('Vous ne pouvez pas modifier votre propre rôle');
       return;
     }
 
@@ -166,13 +176,21 @@ export function RoleManagementSection({
           const isUpdating = updating === user.user_id;
           const roleInfo = ROLE_DESCRIPTIONS[currentRole];
           const RoleIcon = roleInfo.icon;
+          const isSelf = isCurrentUser(user.user_id);
 
           return (
             <Card 
               key={user.id} 
-              className={`transition-all hover:shadow-lg ${isUpdating ? 'opacity-70' : ''} ${roleInfo.borderColor} border-2`}
+              className={`transition-all hover:shadow-lg ${isUpdating ? 'opacity-70' : ''} ${roleInfo.borderColor} border-2 ${isSelf ? 'ring-2 ring-primary/50' : ''}`}
             >
               <CardContent className="pt-6">
+                {/* Self indicator */}
+                {isSelf && (
+                  <Badge className="absolute top-3 right-3 gap-1 bg-primary/20 text-primary text-xs">
+                    C'est vous
+                  </Badge>
+                )}
+
                 {/* User Header */}
                 <div className="flex items-start gap-4 mb-4">
                   <Avatar className="w-12 h-12 ring-2 ring-offset-2 ring-offset-background" style={{ '--tw-ring-color': `hsl(var(--${currentRole === 'super_admin' ? 'primary' : currentRole === 'admin' ? 'primary' : 'muted'}))` } as any}>
@@ -219,32 +237,35 @@ export function RoleManagementSection({
                 <div className="space-y-3 pt-4 border-t border-border">
                   <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                     Attribution des rôles
+                    {isSelf && <span className="text-amber-500 ml-2">(Rôles verrouillés)</span>}
                   </p>
                   
                   <div className="space-y-2">
-                    <label className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors">
+                    <label className={`flex items-center gap-3 p-2 rounded-lg ${isSelf ? 'opacity-60' : 'hover:bg-muted/50 cursor-pointer'} transition-colors`}>
                       <Checkbox
                         checked={currentRole === 'super_admin'}
                         onCheckedChange={(checked) => handleRoleToggle(user.user_id, 'super_admin', checked as boolean)}
-                        disabled={isUpdating}
+                        disabled={isUpdating || isSelf}
                         className="data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500"
                       />
                       <div className="flex items-center gap-2">
                         <ShieldCheck className="w-4 h-4 text-amber-500" />
                         <span className="text-sm font-medium">Super Admin</span>
+                        {isSelf && <Lock className="w-3 h-3 text-muted-foreground" />}
                       </div>
                     </label>
 
-                    <label className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors">
+                    <label className={`flex items-center gap-3 p-2 rounded-lg ${isSelf ? 'opacity-60' : 'hover:bg-muted/50 cursor-pointer'} transition-colors`}>
                       <Checkbox
                         checked={currentRole === 'admin'}
                         onCheckedChange={(checked) => handleRoleToggle(user.user_id, 'admin', checked as boolean)}
-                        disabled={isUpdating || currentRole === 'super_admin'}
+                        disabled={isUpdating || currentRole === 'super_admin' || isSelf}
                         className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                       />
                       <div className="flex items-center gap-2">
                         <Shield className="w-4 h-4 text-primary" />
                         <span className="text-sm font-medium">Admin</span>
+                        {isSelf && <Lock className="w-3 h-3 text-muted-foreground" />}
                       </div>
                     </label>
 

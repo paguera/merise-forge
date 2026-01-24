@@ -4,7 +4,7 @@ import {
   Users, Crown, Gift, Settings, LogOut, ArrowLeft, 
   Shield, ShieldCheck, User as UserIcon, Plus, Trash2, 
   ToggleLeft, ToggleRight, Search, RefreshCw, FolderOpen,
-  Ticket, Bell, Megaphone, UserCog, Sparkles
+  Ticket, Bell, Megaphone, UserCog, Sparkles, BarChart3
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,6 +24,7 @@ import { ThemeLogo } from '@/components/ThemeLogo';
 
 // Admin sub-components
 import { AdminStatsCards } from '@/components/admin/AdminStatsCards';
+import { AdminDashboardStats } from '@/components/admin/AdminDashboardStats';
 import { ProjectsTable } from '@/components/admin/ProjectsTable';
 import { TicketsTable } from '@/components/admin/TicketsTable';
 import { NotificationsManager } from '@/components/admin/NotificationsManager';
@@ -188,8 +189,12 @@ export default function AdminDashboard() {
         />
 
         {/* Tabs */}
-        <Tabs defaultValue="users" className="space-y-4">
+        <Tabs defaultValue="stats" className="space-y-4">
           <TabsList className="flex-wrap h-auto gap-1 bg-card/50 backdrop-blur-sm p-1.5 rounded-xl border border-border/50">
+            <TabsTrigger value="stats" className="gap-2 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all">
+              <BarChart3 className="w-4 h-4" />
+              Statistiques
+            </TabsTrigger>
             <TabsTrigger value="users" className="gap-2 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all">
               <Users className="w-4 h-4" />
               Utilisateurs
@@ -227,6 +232,15 @@ export default function AdminDashboard() {
               </>
             )}
           </TabsList>
+
+          {/* Stats Tab */}
+          <TabsContent value="stats" className="space-y-4">
+            <AdminDashboardStats 
+              users={users}
+              projects={projects}
+              tickets={tickets}
+            />
+          </TabsContent>
 
           {/* Users Tab */}
           <TabsContent value="users" className="space-y-4">
@@ -345,12 +359,15 @@ export default function AdminDashboard() {
                   </CardTitle>
                   <CardDescription>
                     Attribuez ou retirez les rôles Super Admin, Admin et Premium aux utilisateurs via les cases à cocher.
+                    <br />
+                    <span className="text-amber-500/80">Note: Vous ne pouvez pas modifier votre propre rôle, mais vous pouvez gérer votre statut Premium.</span>
                   </CardDescription>
                 </CardHeader>
               </Card>
               <RoleManagementSection 
                 users={users}
                 isSuperAdmin={isSuperAdmin}
+                currentUserId={user?.id || ''}
                 onUpdateRole={updateUserRole}
                 onTogglePremium={togglePremium}
               />

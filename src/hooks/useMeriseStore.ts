@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { Entity, Relation, MeriseModel, MLDModel, MLDColumn, ViewMode, SQLDialect, Attribute } from '@/types/merise';
+import { Entity, Relation, MeriseModel, MLDModel, MLDColumn, MLDTable, ViewMode, SQLDialect, Attribute } from '@/types/merise';
 import { transformMCDtoMLD } from '@/lib/mcdToMld';
 import { generateSQL } from '@/lib/sqlGenerator';
 
@@ -34,6 +34,9 @@ interface MeriseStore {
   removeRelation: (id: string) => void;
   
   // MLD actions
+  addTable: (table: MLDTable) => void;
+  removeTable: (tableId: string) => void;
+  updateTable: (tableId: string, updates: Partial<MLDTable>) => void;
   addColumnToTable: (tableId: string, column: MLDColumn) => void;
   updateColumnInTable: (tableId: string, columnId: string, updates: Partial<MLDColumn>) => void;
   removeColumnFromTable: (tableId: string, columnId: string) => void;
@@ -186,6 +189,52 @@ export const useMeriseStore = create<MeriseStore>()(
   selectEntity: (id) => set({ selectedEntityId: id, selectedRelationId: null }),
   selectRelation: (id) => set({ selectedRelationId: id, selectedEntityId: null }),
 
+  // Table actions
+  addTable: (table) => set((state) => {
+    if (!state.mldModel) {
+      const newMldModel = { tables: [table], relations: [] };
+      const sql = generateSQL(newMldModel, state.sqlDialect);
+      return { mldModel: newMldModel, generatedSQL: sql };
+    }
+    
+    const updatedMldModel = {
+      ...state.mldModel,
+      tables: [...state.mldModel.tables, { ...table, isCustom: true }],
+    };
+    
+    const sql = generateSQL(updatedMldModel, state.sqlDialect);
+    return { mldModel: updatedMldModel, generatedSQL: sql };
+  }),
+
+  removeTable: (tableId) => set((state) => {
+    if (!state.mldModel) return state;
+    
+    const updatedMldModel = {
+      ...state.mldModel,
+      tables: state.mldModel.tables.filter((t) => t.id !== tableId),
+      relations: state.mldModel.relations.filter(
+        (r) => r.fromTable !== tableId && r.toTable !== tableId
+      ),
+    };
+    
+    const sql = generateSQL(updatedMldModel, state.sqlDialect);
+    return { mldModel: updatedMldModel, generatedSQL: sql };
+  }),
+
+  updateTable: (tableId, updates) => set((state) => {
+    if (!state.mldModel) return state;
+    
+    const updatedMldModel = {
+      ...state.mldModel,
+      tables: state.mldModel.tables.map((table) =>
+        table.id === tableId ? { ...table, ...updates } : table
+      ),
+    };
+    
+    const sql = generateSQL(updatedMldModel, state.sqlDialect);
+    return { mldModel: updatedMldModel, generatedSQL: sql };
+  }),
+
   addColumnToTable: (tableId, column) => set((state) => {
     if (!state.mldModel) return state;
     
@@ -256,8 +305,8 @@ export const useMeriseStore = create<MeriseStore>()(
     const { model, mldModel: existingMldModel } = get();
     const newMldModel = transformMCDtoMLD(model);
     
-    // Preserve existing table positions if tables exist
     if (existingMldModel) {
+      // Preserve existing table positions
       newMldModel.tables = newMldModel.tables.map((table) => {
         const existingTable = existingMldModel.tables.find((t) => t.id === table.id);
         if (existingTable) {
@@ -265,6 +314,10 @@ export const useMeriseStore = create<MeriseStore>()(
         }
         return table;
       });
+      
+      // Preserve custom tables (added manually in MPD)
+      const customTables = existingMldModel.tables.filter((t) => t.isCustom);
+      newMldModel.tables = [...newMldModel.tables, ...customTables];
     }
     
     set({ mldModel: newMldModel });

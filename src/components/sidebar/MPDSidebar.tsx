@@ -1,29 +1,30 @@
 import { useState } from 'react';
-import { Plus, Menu, Pencil } from 'lucide-react';
+import { Plus, Menu, Pencil, Table, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useMeriseStore } from '@/hooks/useMeriseStore';
 import { AddColumnDialog } from '@/components/dialogs/AddColumnDialog';
+import { AddTableDialog } from '@/components/dialogs/AddTableDialog';
 import { EditColumnDialog } from '@/components/dialogs/EditColumnDialog';
 import { MLDColumn } from '@/types/merise';
 
 export function MPDSidebar() {
-  const { mldModel, generatedSQL, sqlDialect, addColumnToTable, updateColumnInTable, removeColumnFromTable } = useMeriseStore();
+  const { mldModel, generatedSQL, sqlDialect, addTable, removeTable, addColumnToTable, updateColumnInTable, removeColumnFromTable } = useMeriseStore();
   const [selectedTable, setSelectedTable] = useState<string>('');
   const [isAddColumnOpen, setIsAddColumnOpen] = useState(false);
+  const [isAddTableOpen, setIsAddTableOpen] = useState(false);
   const [editingColumn, setEditingColumn] = useState<MLDColumn | null>(null);
 
-  if (!mldModel) return null;
-
-  const currentTable = mldModel.tables.find(t => t.name === selectedTable);
+  const currentTable = mldModel?.tables.find(t => t.name === selectedTable);
 
   const handleAddColumn = (column: {
     name: string;
     type: string;
     isPrimaryKey: boolean;
     isNullable: boolean;
+    isUnique: boolean;
   }) => {
     if (currentTable) {
       addColumnToTable(currentTable.id, {
@@ -33,7 +34,37 @@ export function MPDSidebar() {
         isPrimaryKey: column.isPrimaryKey,
         isForeignKey: false,
         isNullable: column.isNullable,
+        isUnique: column.isUnique,
       });
+    }
+  };
+
+  const handleAddTable = (tableData: { name: string }) => {
+    const newTable = {
+      id: `table_${Date.now()}`,
+      name: tableData.name,
+      columns: [
+        {
+          id: `col_${Date.now()}_pk`,
+          name: 'id',
+          type: 'INT',
+          isPrimaryKey: true,
+          isForeignKey: false,
+          isNullable: false,
+        },
+      ],
+      isJunction: false,
+      isCustom: true,
+      position: { x: 100, y: 100 },
+    };
+    addTable(newTable);
+    setSelectedTable(tableData.name);
+  };
+
+  const handleRemoveTable = () => {
+    if (currentTable && currentTable.isCustom) {
+      removeTable(currentTable.id);
+      setSelectedTable('');
     }
   };
 
@@ -46,6 +77,16 @@ export function MPDSidebar() {
             <h2 className="text-lg font-semibold text-foreground">Éditeur SQL</h2>
           </div>
 
+          {/* Add Table Button */}
+          <Button 
+            variant="outline" 
+            className="w-full"
+            onClick={() => setIsAddTableOpen(true)}
+          >
+            <Table className="w-4 h-4 mr-2" />
+            Ajouter une table
+          </Button>
+
           <div>
             <Label className="text-xs text-muted-foreground uppercase tracking-wide">Table cible :</Label>
             <Select value={selectedTable} onValueChange={setSelectedTable}>
@@ -53,9 +94,14 @@ export function MPDSidebar() {
                 <SelectValue placeholder="Sélectionner une table" />
               </SelectTrigger>
               <SelectContent>
-                {mldModel.tables.map((table) => (
+                {mldModel?.tables.map((table) => (
                   <SelectItem key={table.id} value={table.name}>
-                    {table.name}
+                    <div className="flex items-center gap-2">
+                      {table.name}
+                      {table.isCustom && (
+                        <Badge variant="outline" className="text-[10px] px-1 py-0">Custom</Badge>
+                      )}
+                    </div>
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -63,49 +109,61 @@ export function MPDSidebar() {
           </div>
 
           {currentTable && (
-            <div className="space-y-2">
-              <Label className="text-xs text-muted-foreground uppercase tracking-wide">
-                Colonnes ({currentTable.columns.length})
-              </Label>
+            <>
               <div className="space-y-2">
-                {currentTable.columns.map((col) => (
-                  <div 
-                    key={col.id} 
-                    className="flex items-center justify-between bg-card rounded p-2 border border-border group"
-                  >
-                    <div className="flex items-center gap-2">
-                      {col.isPrimaryKey && (
-                        <Badge className="bg-pk text-pk-foreground px-1.5 py-0.5 text-xs">PK</Badge>
-                      )}
-                      {col.isForeignKey && (
-                        <Badge className="bg-fk text-fk-foreground px-1.5 py-0.5 text-xs">FK</Badge>
-                      )}
-                      <span className="text-sm">{col.name}</span>
+                <Label className="text-xs text-muted-foreground uppercase tracking-wide">
+                  Colonnes ({currentTable.columns.length})
+                </Label>
+                <div className="space-y-2">
+                  {currentTable.columns.map((col) => (
+                    <div 
+                      key={col.id} 
+                      className="flex items-center justify-between bg-card rounded p-2 border border-border group"
+                    >
+                      <div className="flex items-center gap-2">
+                        {col.isPrimaryKey && (
+                          <Badge className="bg-pk text-pk-foreground px-1.5 py-0.5 text-xs">PK</Badge>
+                        )}
+                        {col.isForeignKey && (
+                          <Badge className="bg-fk text-fk-foreground px-1.5 py-0.5 text-xs">FK</Badge>
+                        )}
+                        <span className="text-sm">{col.name}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground font-mono">{col.type}</span>
+                        <button
+                          onClick={() => setEditingColumn(col)}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-primary"
+                        >
+                          <Pencil className="w-3 h-3" />
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground font-mono">{col.type}</span>
-                      <button
-                        onClick={() => setEditingColumn(col)}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-primary"
-                      >
-                        <Pencil className="w-3 h-3" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
 
-          <Button 
-            variant="outline" 
-            className="w-full text-pk border-pk hover:bg-pk/10"
-            onClick={() => setIsAddColumnOpen(true)}
-            disabled={!currentTable}
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Ajouter un champ
-          </Button>
+              <Button 
+                variant="outline" 
+                className="w-full text-pk border-pk hover:bg-pk/10"
+                onClick={() => setIsAddColumnOpen(true)}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Ajouter un champ
+              </Button>
+
+              {currentTable.isCustom && (
+                <Button 
+                  variant="outline" 
+                  className="w-full text-destructive border-destructive hover:bg-destructive/10"
+                  onClick={handleRemoveTable}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Supprimer la table
+                </Button>
+              )}
+            </>
+          )}
         </div>
 
         {/* SQL Preview */}
@@ -118,6 +176,12 @@ export function MPDSidebar() {
           />
         </div>
       </div>
+
+      <AddTableDialog
+        open={isAddTableOpen}
+        onOpenChange={setIsAddTableOpen}
+        onAdd={handleAddTable}
+      />
 
       <AddColumnDialog
         open={isAddColumnOpen}

@@ -37,6 +37,7 @@ export interface MLDTable {
   name: string;
   columns: MLDColumn[];
   isJunction: boolean;
+  isCustom?: boolean; // Tables added manually in MPD, not from MCD transformation
   position: { x: number; y: number };
 }
 

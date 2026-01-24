@@ -587,6 +587,7 @@ export function Header({ realtime }: HeaderProps) {
         currentUsername={realtime.username}
         onApprove={(id) => realtime.syncHistory.approveEntry(id, realtime.username)}
         onReject={(id) => realtime.syncHistory.rejectEntry(id, realtime.username)}
+        onAddComment={(id, comment) => realtime.syncHistory.addComment(id, comment)}
       />
       <SchemasDialog
         open={schemasOpen}

@@ -13,6 +13,8 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ProjectSchema } from '@/types/collaboration';
+import { SchemaThumbnail } from '@/components/canvas/SchemaThumbnail';
+import { MeriseModel } from '@/types/merise';
 
 interface SchemasDialogProps {
   open: boolean;
@@ -99,8 +101,11 @@ export function SchemasDialog({
               <p className="text-sm mt-1">Créez un schéma pour sauvegarder votre travail</p>
             </div>
           ) : (
-            <div className="space-y-2">
-              {schemas.map((schema) => (
+            <div className="space-y-3">
+              {schemas.map((schema) => {
+                const schemaModel = (schema.data?.model || { entities: [], relations: [] }) as MeriseModel;
+                
+                return (
                 <div
                   key={schema.id}
                   className={`border rounded-lg p-3 transition-colors ${
@@ -109,7 +114,15 @@ export function SchemasDialog({
                       : 'border-border hover:bg-secondary/30'
                   }`}
                 >
-                  <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-start gap-3">
+                    {/* Thumbnail */}
+                    <SchemaThumbnail 
+                      model={schemaModel} 
+                      width={100} 
+                      height={70} 
+                      className="shrink-0"
+                    />
+
                     {editingId === schema.id ? (
                       <div className="flex items-center gap-2 flex-1">
                         <Input
@@ -131,19 +144,22 @@ export function SchemasDialog({
                       </div>
                     ) : (
                       <>
-                        <div className="flex-1">
+                        <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="font-medium">{schema.name}</span>
+                            <span className="font-medium truncate">{schema.name}</span>
                             {currentSchemaId === schema.id && (
-                              <Badge variant="secondary" className="text-xs">Actif</Badge>
+                              <Badge variant="secondary" className="text-xs shrink-0">Actif</Badge>
                             )}
                           </div>
                           <div className="text-xs text-muted-foreground mt-1">
                             Par {schema.created_by} • {format(new Date(schema.created_at), "dd MMM yyyy", { locale: fr })}
                           </div>
+                          <div className="text-xs text-muted-foreground mt-0.5">
+                            {schemaModel.entities?.length || 0} entités • {schemaModel.relations?.length || 0} relations
+                          </div>
                         </div>
 
-                        <div className="flex items-center gap-1">
+                        <div className="flex flex-col gap-1 shrink-0">
                           {currentSchemaId === schema.id ? (
                             <Button 
                               size="sm" 
@@ -163,28 +179,31 @@ export function SchemasDialog({
                               Charger
                             </Button>
                           )}
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-8 w-8"
-                            onClick={() => handleStartEdit(schema)}
-                          >
-                            <Pencil className="w-3 h-3" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-8 w-8 text-destructive hover:text-destructive"
-                            onClick={() => onDeleteSchema(schema.id)}
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </Button>
+                          <div className="flex gap-1">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7"
+                              onClick={() => handleStartEdit(schema)}
+                            >
+                              <Pencil className="w-3 h-3" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7 text-destructive hover:text-destructive"
+                              onClick={() => onDeleteSchema(schema.id)}
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </div>
                         </div>
                       </>
                     )}
                   </div>
                 </div>
-              ))}
+              );
+              })}
             </div>
           )}
         </ScrollArea>

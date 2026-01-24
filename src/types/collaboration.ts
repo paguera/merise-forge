@@ -34,6 +34,7 @@ export interface SyncHistoryEntry {
     mldModel?: MLDModel | null;
   };
   status: 'pending' | 'approved' | 'rejected';
+  comment: string | null;
   reviewed_at: string | null;
   reviewed_by: string | null;
   created_at: string;

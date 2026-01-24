@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { History, Check, X, Clock, User, ChevronDown, ChevronUp, Eye } from 'lucide-react';
+import { History, Check, X, Clock, User, ChevronDown, ChevronUp, Eye, MessageSquare, Send } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import {
@@ -11,8 +11,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Textarea } from '@/components/ui/textarea';
 import { SyncHistoryEntry } from '@/types/collaboration';
 import { useMeriseStore } from '@/hooks/useMeriseStore';
+import { toast } from 'sonner';
 
 interface SyncHistoryDialogProps {
   open: boolean;
@@ -23,6 +25,7 @@ interface SyncHistoryDialogProps {
   currentUsername: string;
   onApprove: (entryId: string) => Promise<boolean>;
   onReject: (entryId: string) => Promise<boolean>;
+  onAddComment: (entryId: string, comment: string) => Promise<boolean>;
 }
 
 export function SyncHistoryDialog({
@@ -34,9 +37,12 @@ export function SyncHistoryDialog({
   currentUsername,
   onApprove,
   onReject,
+  onAddComment,
 }: SyncHistoryDialogProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
+  const [commentingId, setCommentingId] = useState<string | null>(null);
+  const [newComment, setNewComment] = useState('');
 
   const filteredHistory = history.filter(entry => {
     if (filter === 'all') return true;
@@ -69,6 +75,17 @@ export function SyncHistoryDialog({
         model: entry.snapshot.model,
         mldModel: entry.snapshot.mldModel ?? null,
       });
+      toast.success('Version restaurée');
+    }
+  };
+
+  const handleSubmitComment = async (entryId: string) => {
+    if (!newComment.trim()) return;
+    
+    const success = await onAddComment(entryId, newComment.trim());
+    if (success) {
+      setNewComment('');
+      setCommentingId(null);
     }
   };
 
@@ -144,15 +161,66 @@ export function SyncHistoryDialog({
                     </Button>
                   </div>
 
+                  {/* Comment preview */}
+                  {entry.comment && (
+                    <div className="mt-2 bg-secondary/50 rounded p-2 text-sm">
+                      <span className="text-muted-foreground">💬 </span>
+                      {entry.comment}
+                    </div>
+                  )}
+
                   {/* Expanded details */}
                   {expandedId === entry.id && (
                     <div className="mt-3 pt-3 border-t border-border space-y-3">
                       {/* Changes detail */}
                       <div className="bg-secondary/50 rounded p-2">
                         <p className="text-xs font-medium text-muted-foreground mb-1">Détails des changements :</p>
-                        <pre className="text-xs overflow-x-auto">
+                        <pre className="text-xs overflow-x-auto max-h-32 overflow-y-auto">
                           {JSON.stringify(entry.changes_detail, null, 2)}
                         </pre>
+                      </div>
+
+                      {/* Comment section */}
+                      <div className="space-y-2">
+                        {commentingId === entry.id ? (
+                          <div className="space-y-2">
+                            <Textarea
+                              placeholder="Ajouter un commentaire..."
+                              value={newComment}
+                              onChange={(e) => setNewComment(e.target.value)}
+                              className="min-h-[60px] text-sm"
+                            />
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                onClick={() => handleSubmitComment(entry.id)}
+                                disabled={!newComment.trim()}
+                              >
+                                <Send className="w-3 h-3 mr-1" />
+                                Envoyer
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => {
+                                  setCommentingId(null);
+                                  setNewComment('');
+                                }}
+                              >
+                                Annuler
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCommentingId(entry.id)}
+                          >
+                            <MessageSquare className="w-3 h-3 mr-1" />
+                            {entry.comment ? 'Modifier le commentaire' : 'Ajouter un commentaire'}
+                          </Button>
+                        )}
                       </div>
 
                       {/* Review info */}
@@ -164,7 +232,7 @@ export function SyncHistoryDialog({
                       )}
 
                       {/* Actions */}
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 flex-wrap">
                         {entry.snapshot.model && (
                           <Button
                             variant="outline"

@@ -60,6 +60,7 @@ export function useRealtimeProject() {
         mldModel: currentState.mldModel,
       },
       status: isAdmin ? 'approved' : 'pending',
+      comment: null,
     });
 
     previousState.current = {

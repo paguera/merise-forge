@@ -11,7 +11,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Users, Wifi, WifiOff, Circle } from 'lucide-react';
+import { Users, Wifi, WifiOff, Circle, Wand2, Copy, Check } from 'lucide-react';
+import { generateProjectCode } from '@/lib/projectCodeGenerator';
+import { toast } from 'sonner';
 import type { PresenceUser } from '@/hooks/useRealtimePresence';
 
 interface Props {
@@ -41,11 +43,25 @@ export function CollaborationDialog({
 }: Props) {
   const [name, setName] = useState('');
   const [user, setUser] = useState('');
+  const [copied, setCopied] = useState(false);
 
   const handleJoin = () => {
     if (!name.trim() || !user.trim()) return;
     onJoin(name.trim(), user.trim());
     onOpenChange(false);
+  };
+
+  const handleGenerateCode = () => {
+    const code = generateProjectCode();
+    setName(code);
+    toast.success('Code de projet généré !');
+  };
+
+  const handleCopyCode = () => {
+    navigator.clipboard.writeText(name);
+    setCopied(true);
+    toast.success('Code copié !');
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const allUsers = connected ? [
@@ -89,13 +105,39 @@ export function CollaborationDialog({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="project-name">Nom du projet</Label>
-              <Input
-                id="project-name"
-                placeholder="ex: mon-schema-db"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
+              <Label htmlFor="project-name">Code du projet</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="project-name"
+                  placeholder="ex: Ressou.Merize-AlphaCore-XY12"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={handleGenerateCode}
+                  title="Générer un code"
+                >
+                  <Wand2 className="w-4 h-4" />
+                </Button>
+                {name && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={handleCopyCode}
+                    title="Copier le code"
+                  >
+                    {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                  </Button>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Cliquez sur la baguette pour générer un code unique ou entrez un nom personnalisé
+              </p>
             </div>
           </div>
         ) : (

@@ -35,7 +35,7 @@ const getCardinalityExplanation = (cardinality: string, isRequired: boolean) => 
 };
 
 export function MCDSidebar() {
-  const { model, addEntity, addRelation, removeEntity, updateEntity, addAttribute, updateAttribute, removeAttribute, updateRelation, removeRelation, resetModel } = useMeriseStore();
+  const { model, addEntity, addRelation, removeEntity, updateEntity, addAttribute, updateAttribute, removeAttribute, reorderAttributes, updateRelation, removeRelation, resetModel } = useMeriseStore();
   const [editingEntity, setEditingEntity] = useState<Entity | null>(null);
   const [editingRelation, setEditingRelation] = useState<Relation | null>(null);
   const [step, setStep] = useState<CreationStep>('entity1');
@@ -462,6 +462,7 @@ export function MCDSidebar() {
         onAddAttribute={(attr) => editingEntity && addAttribute(editingEntity.id, attr)}
         onUpdateAttribute={(attrId, updates) => editingEntity && updateAttribute(editingEntity.id, attrId, updates)}
         onRemoveAttribute={(attrId) => editingEntity && removeAttribute(editingEntity.id, attrId)}
+        onReorderAttributes={(from, to) => editingEntity && reorderAttributes(editingEntity.id, from, to)}
       />
 
       <EditRelationDialog

@@ -200,6 +200,19 @@
   .animate-cursor-pulse {
     animation: cursorPulse 2s ease-in-out infinite;
   }
+
+  .animate-sparkle {
+    animation: sparkle 1.5s ease-in-out infinite;
+  }
+
+  .admin-badge-gold {
+    background: linear-gradient(135deg, hsl(45 93% 47%), hsl(38 92% 50%), hsl(45 93% 47%));
+    background-size: 200% 200%;
+    animation: shimmer 2s ease-in-out infinite, sparkle 1.5s ease-in-out infinite;
+    color: hsl(0 0% 0%);
+    border: 1px solid hsl(45 93% 60%);
+    box-shadow: 0 0 10px hsla(45 93% 50% / 0.4), 0 0 20px hsla(45 93% 50% / 0.2);
+  }
 }
 
 @keyframes fadeIn {
@@ -220,4 +233,19 @@
 @keyframes cursorPulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.7; }
+}
+
+@keyframes shimmer {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes sparkle {
+  0%, 100% { 
+    box-shadow: 0 0 10px hsla(45 93% 50% / 0.4), 0 0 20px hsla(45 93% 50% / 0.2);
+  }
+  50% { 
+    box-shadow: 0 0 15px hsla(45 93% 50% / 0.6), 0 0 30px hsla(45 93% 50% / 0.4), 0 0 5px hsla(45 93% 70% / 0.8);
+  }
 }

@@ -1,4 +1,5 @@
 import { Header } from '@/components/Header';
+import { Footer } from '@/components/Footer';
 import { MCDSidebar } from '@/components/sidebar/MCDSidebar';
 import { MLDSidebar } from '@/components/sidebar/MLDSidebar';
 import { MPDSidebar } from '@/components/sidebar/MPDSidebar';
@@ -17,7 +18,7 @@ const Index = () => {
   const handleCursorMove = connected ? updateCursor : undefined;
 
   return (
-    <div className="h-screen flex flex-col bg-background overflow-hidden">
+    <div className="min-h-screen flex flex-col bg-background overflow-hidden">
       <Header realtime={realtime} />
       
       <div className="flex-1 flex overflow-hidden">
@@ -36,6 +37,8 @@ const Index = () => {
         userColor={myColor}
         connected={connected}
       />
+
+      <Footer />
     </div>
   );
 };

@@ -29,6 +29,8 @@ import { TicketsTable } from '@/components/admin/TicketsTable';
 import { NotificationsManager } from '@/components/admin/NotificationsManager';
 import { SiteSettingsManager } from '@/components/admin/SiteSettingsManager';
 import { RoleManagementSection } from '@/components/admin/RoleManagementSection';
+import { FooterSettingsManager } from '@/components/admin/FooterSettingsManager';
+import { UsersManagementSection } from '@/components/admin/UsersManagementSection';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -555,11 +557,25 @@ export default function AdminDashboard() {
               </TabsContent>
 
               {/* Settings Tab */}
-              <TabsContent value="settings" className="space-y-4">
-                <SiteSettingsManager
-                  settings={siteSettings}
-                  onUpdate={updateSiteSetting}
-                />
+              <TabsContent value="settings" className="space-y-6">
+                <Tabs defaultValue="site" className="space-y-4">
+                  <TabsList>
+                    <TabsTrigger value="site">Site</TabsTrigger>
+                    <TabsTrigger value="footer">Footer</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="site">
+                    <SiteSettingsManager
+                      settings={siteSettings}
+                      onUpdate={updateSiteSetting}
+                    />
+                  </TabsContent>
+                  <TabsContent value="footer">
+                    <FooterSettingsManager
+                      settings={siteSettings}
+                      onUpdate={updateSiteSetting}
+                    />
+                  </TabsContent>
+                </Tabs>
               </TabsContent>
             </>
           )}

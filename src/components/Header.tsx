@@ -3,7 +3,7 @@ import {
   Moon, Sun, CloudUpload, FolderOpen, FileArchive, 
   Upload, UsersRound, Music, Clock, Layers, ShieldCheck, 
   LogIn, User, LogOut, Crown, Shield, Bookmark, Sparkles,
-  Palette
+  Palette, HelpCircle
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ThemeLogo } from '@/components/ThemeLogo';
@@ -562,6 +562,11 @@ export function Header({ realtime }: HeaderProps) {
                   </DropdownMenuItem>
                 </>
               )}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => navigate('/support')} className="cursor-pointer">
+                <HelpCircle className="w-4 h-4 mr-2" />
+                Support
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={signOut} className="text-destructive cursor-pointer">
                 <LogOut className="w-4 h-4 mr-2" />

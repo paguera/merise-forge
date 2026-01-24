@@ -1,12 +1,13 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, ChangeEvent } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { User, Mail, Camera, Crown, Calendar, Shield } from 'lucide-react';
+import { User, Mail, Camera, Crown, Calendar, Shield, Upload, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import type { UserProfile, UserRole } from '@/hooks/useAuth';
 
 interface UserProfileDialogProps {
@@ -30,11 +31,52 @@ export function UserProfileDialog({
   const [lastName, setLastName] = useState(profile?.last_name || '');
   const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || '');
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isPremium = profile?.is_premium || (profile?.premium_until && new Date(profile.premium_until) > new Date());
   const highestRole = roles.find(r => r.role === 'super_admin')?.role 
     || roles.find(r => r.role === 'admin')?.role 
     || 'user';
+
+  const handleFileUpload = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !profile) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Veuillez sélectionner une image');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('L\'image ne doit pas dépasser 5 Mo');
+      return;
+    }
+
+    setUploading(true);
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const filePath = `${profile.user_id}/${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
+      setAvatarUrl(data.publicUrl);
+      toast.success('Image téléchargée');
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      toast.error('Erreur lors du téléchargement');
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleSave = async () => {
     setLoading(true);
@@ -87,21 +129,50 @@ export function UserProfileDialog({
         <div className="space-y-6">
           {/* Avatar section */}
           <div className="flex flex-col items-center gap-4">
-            <Avatar className="w-24 h-24 border-4 border-primary/20">
-              <AvatarImage src={avatarUrl} />
-              <AvatarFallback className="text-2xl bg-primary/10 text-primary">
-                {getInitials()}
-              </AvatarFallback>
-            </Avatar>
+            <div className="relative group">
+              <Avatar className="w-24 h-24 border-4 border-primary/20">
+                <AvatarImage src={avatarUrl} />
+                <AvatarFallback className="text-2xl bg-primary/10 text-primary">
+                  {getInitials()}
+                </AvatarFallback>
+              </Avatar>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+              >
+                {uploading ? (
+                  <Loader2 className="w-6 h-6 text-white animate-spin" />
+                ) : (
+                  <Camera className="w-6 h-6 text-white" />
+                )}
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+            </div>
             <div className="flex items-center gap-2 w-full">
               <Input
-                placeholder="URL de l'avatar"
+                placeholder="URL de l'avatar (optionnel)"
                 value={avatarUrl}
                 onChange={(e) => setAvatarUrl(e.target.value)}
-                className="flex-1"
+                className="flex-1 text-sm"
               />
-              <Button variant="outline" size="icon">
-                <Camera className="w-4 h-4" />
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+              >
+                {uploading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Upload className="w-4 h-4" />
+                )}
               </Button>
             </div>
           </div>
@@ -177,7 +248,7 @@ export function UserProfileDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Annuler
           </Button>
-          <Button onClick={handleSave} disabled={loading}>
+          <Button onClick={handleSave} disabled={loading || uploading}>
             {loading ? 'Sauvegarde...' : 'Sauvegarder'}
           </Button>
         </DialogFooter>

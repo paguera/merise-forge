@@ -4,7 +4,7 @@ import {
   Users, Crown, Gift, Settings, LogOut, ArrowLeft, 
   Shield, ShieldCheck, User as UserIcon, Plus, Trash2, 
   ToggleLeft, ToggleRight, Search, RefreshCw, FolderOpen,
-  Ticket, Bell, Megaphone, TestTube
+  Ticket, Bell, Megaphone, UserCog, Sparkles
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,7 +28,7 @@ import { ProjectsTable } from '@/components/admin/ProjectsTable';
 import { TicketsTable } from '@/components/admin/TicketsTable';
 import { NotificationsManager } from '@/components/admin/NotificationsManager';
 import { SiteSettingsManager } from '@/components/admin/SiteSettingsManager';
-import { TestUsersSection } from '@/components/admin/TestUsersSection';
+import { RoleManagementSection } from '@/components/admin/RoleManagementSection';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -138,17 +138,19 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
       {/* Header */}
-      <header className="flex items-center justify-between px-6 py-4 bg-card border-b border-border">
+      <header className="flex items-center justify-between px-6 py-4 bg-card/80 backdrop-blur-md border-b border-border/50 sticky top-0 z-50">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
+          <Button variant="ghost" size="icon" onClick={() => navigate('/')} className="hover:bg-primary/10">
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div className="flex items-center gap-3">
             <ThemeLogo size={36} />
             <div>
-              <h1 className="text-xl font-bold text-primary">Dashboard Admin</h1>
+              <h1 className="text-xl font-bold bg-gradient-to-r from-primary via-blue-400 to-primary bg-clip-text text-transparent">
+                Dashboard Admin
+              </h1>
               <p className="text-sm text-muted-foreground">
                 {isSuperAdmin ? 'Accès complet' : 'Accès limité'}
               </p>
@@ -157,14 +159,14 @@ export default function AdminDashboard() {
         </div>
         
         <div className="flex items-center gap-3">
-          <Badge className={isSuperAdmin ? "admin-badge-gold gap-1" : "gap-1"}>
+          <Badge className={isSuperAdmin ? "admin-badge-gold gap-1" : "gap-1 bg-primary/10 text-primary border-primary/30"}>
             {isSuperAdmin ? <ShieldCheck className="w-3 h-3" /> : <Shield className="w-3 h-3" />}
             {isSuperAdmin ? 'Super Admin' : 'Admin'}
           </Badge>
-          <Button variant="ghost" size="icon" onClick={refresh}>
+          <Button variant="ghost" size="icon" onClick={refresh} className="hover:bg-primary/10">
             <RefreshCw className="w-5 h-5" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={() => { signOut(); navigate('/auth'); }}>
+          <Button variant="ghost" size="icon" onClick={() => { signOut(); navigate('/auth'); }} className="hover:bg-destructive/10 hover:text-destructive">
             <LogOut className="w-5 h-5" />
           </Button>
         </div>
@@ -185,38 +187,38 @@ export default function AdminDashboard() {
 
         {/* Tabs */}
         <Tabs defaultValue="users" className="space-y-4">
-          <TabsList className="flex-wrap h-auto">
-            <TabsTrigger value="users" className="gap-2">
+          <TabsList className="flex-wrap h-auto gap-1 bg-card/50 backdrop-blur-sm p-1.5 rounded-xl border border-border/50">
+            <TabsTrigger value="users" className="gap-2 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all">
               <Users className="w-4 h-4" />
               Utilisateurs
             </TabsTrigger>
-            <TabsTrigger value="projects" className="gap-2">
+            <TabsTrigger value="projects" className="gap-2 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all">
               <FolderOpen className="w-4 h-4" />
               Projets
             </TabsTrigger>
-            <TabsTrigger value="tickets" className="gap-2">
+            <TabsTrigger value="tickets" className="gap-2 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all">
               <Ticket className="w-4 h-4" />
               Tickets
             </TabsTrigger>
-            <TabsTrigger value="test-users" className="gap-2">
-              <TestTube className="w-4 h-4" />
-              Tests
-            </TabsTrigger>
             {isSuperAdmin && (
               <>
-                <TabsTrigger value="promos" className="gap-2">
+                <TabsTrigger value="roles" className="gap-2 rounded-lg data-[state=active]:bg-amber-500 data-[state=active]:text-black transition-all">
+                  <UserCog className="w-4 h-4" />
+                  Rôles
+                </TabsTrigger>
+                <TabsTrigger value="promos" className="gap-2 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all">
                   <Gift className="w-4 h-4" />
                   Codes Promo
                 </TabsTrigger>
-                <TabsTrigger value="subscriptions" className="gap-2">
+                <TabsTrigger value="subscriptions" className="gap-2 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all">
                   <Crown className="w-4 h-4" />
                   Abonnements
                 </TabsTrigger>
-                <TabsTrigger value="notifications" className="gap-2">
+                <TabsTrigger value="notifications" className="gap-2 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all">
                   <Bell className="w-4 h-4" />
                   Notifications
                 </TabsTrigger>
-                <TabsTrigger value="settings" className="gap-2">
+                <TabsTrigger value="settings" className="gap-2 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all">
                   <Settings className="w-4 h-4" />
                   Paramètres
                 </TabsTrigger>
@@ -330,53 +332,28 @@ export default function AdminDashboard() {
             />
           </TabsContent>
 
-          {/* Test Users Tab */}
-          <TabsContent value="test-users" className="space-y-4">
-            <Card className="mb-6">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TestTube className="w-5 h-5" />
-                  Liste des utilisateurs pour tests
-                </CardTitle>
-                <CardDescription>
-                  Aperçu des différents types d'utilisateurs et leurs permissions dans le schéma Merise
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="p-4 bg-muted rounded-lg">
-                    <h4 className="font-semibold text-amber-500 flex items-center gap-2">
-                      <ShieldCheck className="w-4 h-4" />
-                      Super Admin
-                    </h4>
-                    <ul className="text-sm text-muted-foreground mt-2 space-y-1">
-                      <li>✅ Gérer les rôles des utilisateurs</li>
-                      <li>✅ Distribuer les abonnements Premium</li>
-                      <li>✅ Créer/gérer les codes promo</li>
-                      <li>✅ Envoyer des notifications globales</li>
-                      <li>✅ Personnaliser le site (logo, etc.)</li>
-                      <li>✅ Messagerie dans tous les projets</li>
-                    </ul>
-                  </div>
-                  <div className="p-4 bg-muted rounded-lg">
-                    <h4 className="font-semibold text-primary flex items-center gap-2">
-                      <Shield className="w-4 h-4" />
-                      Admin
-                    </h4>
-                    <ul className="text-sm text-muted-foreground mt-2 space-y-1">
-                      <li>✅ Voir les utilisateurs</li>
-                      <li>✅ Voir les projets et schémas</li>
-                      <li>✅ Gérer les tickets de support</li>
-                      <li>❌ Pas de création de codes promo</li>
-                      <li>❌ Pas de distribution d'abonnements</li>
-                      <li>❌ Pas d'accès aux paramètres du site</li>
-                    </ul>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <TestUsersSection users={users} />
-          </TabsContent>
+          {/* Roles Tab - Super Admin Only */}
+          {isSuperAdmin && (
+            <TabsContent value="roles" className="space-y-4">
+              <Card className="mb-6 border-amber-500/30 bg-gradient-to-br from-amber-500/5 via-transparent to-transparent">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-amber-500">
+                    <Sparkles className="w-5 h-5" />
+                    Gestion des rôles et permissions
+                  </CardTitle>
+                  <CardDescription>
+                    Attribuez ou retirez les rôles Super Admin, Admin et Premium aux utilisateurs via les cases à cocher.
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+              <RoleManagementSection 
+                users={users}
+                isSuperAdmin={isSuperAdmin}
+                onUpdateRole={updateUserRole}
+                onTogglePremium={togglePremium}
+              />
+            </TabsContent>
+          )}
 
           {/* Super Admin Only Tabs */}
           {isSuperAdmin && (

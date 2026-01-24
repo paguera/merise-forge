@@ -4,6 +4,7 @@ export interface Attribute {
   type: 'INT' | 'VARCHAR' | 'TEXT' | 'DATE' | 'DATETIME' | 'BOOLEAN' | 'FLOAT' | 'DECIMAL' | 'ENUM';
   isPrimaryKey: boolean;
   isNullable: boolean;
+  isUnique?: boolean;
   length?: number;
   enumValues?: string[]; // For ENUM type
 }
@@ -47,6 +48,7 @@ export interface MLDColumn {
   type: string;
   isPrimaryKey: boolean;
   isForeignKey: boolean;
+  isUnique?: boolean;
   references?: {
     table: string;
     column: string;

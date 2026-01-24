@@ -41,6 +41,7 @@ export function EditEntityDialog({
   const [newAttrLength, setNewAttrLength] = useState('255');
   const [newAttrPK, setNewAttrPK] = useState(false);
   const [newAttrNullable, setNewAttrNullable] = useState(false);
+  const [newAttrUnique, setNewAttrUnique] = useState(false);
   const [newEnumValues, setNewEnumValues] = useState('');
 
   useEffect(() => {
@@ -72,6 +73,7 @@ export function EditEntityDialog({
         type: newAttrType,
         isPrimaryKey: newAttrPK,
         isNullable: newAttrNullable,
+        isUnique: newAttrUnique,
         length,
         enumValues,
       });
@@ -80,6 +82,7 @@ export function EditEntityDialog({
       setNewAttrLength('255');
       setNewAttrPK(false);
       setNewAttrNullable(false);
+      setNewAttrUnique(false);
       setNewEnumValues('');
     }
   };
@@ -152,6 +155,13 @@ export function EditEntityDialog({
                         onCheckedChange={(checked) => onUpdateAttribute(attr.id, { isPrimaryKey: !!checked })}
                       />
                       <span className="text-xs text-muted-foreground">PK</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Checkbox
+                        checked={attr.isUnique}
+                        onCheckedChange={(checked) => onUpdateAttribute(attr.id, { isUnique: !!checked })}
+                      />
+                      <span className="text-xs text-muted-foreground">UQ</span>
                     </div>
                     <Button
                       variant="ghost"
@@ -230,6 +240,14 @@ export function EditEntityDialog({
                     onCheckedChange={(checked) => setNewAttrNullable(!!checked)}
                   />
                   <Label htmlFor="newNullable" className="text-sm">Nullable</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="newUnique"
+                    checked={newAttrUnique}
+                    onCheckedChange={(checked) => setNewAttrUnique(!!checked)}
+                  />
+                  <Label htmlFor="newUnique" className="text-sm">Unique</Label>
                 </div>
               </div>
               <Button onClick={handleAddAttribute} disabled={!newAttrName.trim() || (isEnum && !newEnumValues.trim())} size="sm">

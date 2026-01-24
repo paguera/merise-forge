@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Database, Moon, Sun, Info, Save, FolderOpen, Archive, Upload, Users, Music, History, Layers, Shield } from 'lucide-react';
+import { Database, Moon, Sun, Save, FolderOpen, Archive, Upload, Users, Music, History, Layers, Shield, LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -373,7 +373,7 @@ export function Header({ realtime }: HeaderProps) {
           
           const dataUrl = await toPng(canvas, {
             quality: 1,
-            backgroundColor: theme === 'dark' ? '#1a1a2e' : '#e8eef5',
+            backgroundColor: theme === 'spotify' ? '#0a0a0a' : theme === 'dark' ? '#1a1a2e' : '#e8eef5',
             width: minWidth,
             height: minHeight,
             style: {
@@ -496,8 +496,8 @@ export function Header({ realtime }: HeaderProps) {
         <Button variant="ghost" size="icon" onClick={() => setLoadOpen(true)} title="Charger">
           <FolderOpen className="w-5 h-5" />
         </Button>
-        <Button variant="ghost" size="icon" onClick={() => navigate('/info')} title="Info">
-          <Info className="w-5 h-5" />
+        <Button variant="ghost" size="icon" onClick={() => navigate('/auth')} title="Connexion">
+          <LogIn className="w-5 h-5" />
         </Button>
         <Button variant="ghost" size="icon" onClick={cycleTheme} title={`Thème: ${theme}`}>
           {theme === 'dark' ? <Sun className="w-5 h-5" /> : theme === 'spotify' ? <Music className="w-5 h-5 text-primary" /> : <Moon className="w-5 h-5" />}
@@ -544,9 +544,9 @@ export function Header({ realtime }: HeaderProps) {
           </Button>
         )}
 
-        {/* Admin badge */}
+        {/* Admin badge - Golden sparkling */}
         {realtime.connected && realtime.isAdmin && (
-          <Badge variant="outline" className="gap-1 bg-primary/10 border-primary/30">
+          <Badge className="gap-1 admin-badge-gold font-semibold">
             <Shield className="w-3 h-3" />
             Admin
           </Badge>
@@ -577,6 +577,8 @@ export function Header({ realtime }: HeaderProps) {
         onPush={realtime.pushState}
         users={realtime.users}
         myColor={realtime.myColor}
+        creatorId={realtime.creatorId}
+        userStats={realtime.userStats.stats}
       />
       <SyncHistoryDialog
         open={historyOpen}

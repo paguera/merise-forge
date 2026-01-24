@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useMeriseStore } from './useMeriseStore';
 import { useSyncHistory } from './useSyncHistory';
 import { useProjectSchemas } from './useProjectSchemas';
+import { useProjectUserStats } from './useProjectUserStats';
 import { toast } from 'sonner';
 import type { MeriseModel, MLDModel, SQLDialect } from '@/types/merise';
 import { useRealtimePresence, PresenceUser } from './useRealtimePresence';
@@ -34,6 +35,9 @@ export function useRealtimeProject() {
 
   // Project schemas hook
   const projectSchemas = useProjectSchemas(projectId, username);
+
+  // User stats hook
+  const userStats = useProjectUserStats(projectId);
 
   // Track changes for history
   const trackChange = useCallback(async (
@@ -139,6 +143,9 @@ export function useRealtimeProject() {
         
         setTimeout(() => { autoSyncEnabled.current = true; }, 100);
         toast.success(`Rejoint le projet "${name}" en tant que ${user}${userIsAdmin ? ' (Admin)' : ''}`);
+        
+        // Record connection for stats
+        userStats.recordConnection(user);
       } else {
         // Create new project - creator becomes admin
         const currentState = useMeriseStore.getState();
@@ -168,6 +175,9 @@ export function useRealtimeProject() {
           model: JSON.parse(JSON.stringify(currentState.model)),
           mldModel: currentState.mldModel ? JSON.parse(JSON.stringify(currentState.mldModel)) : null,
         };
+        
+        // Record connection for stats
+        userStats.recordConnection(user);
         
         toast.success(`Projet "${name}" créé par ${user} (Admin)`);
       }
@@ -278,5 +288,7 @@ export function useRealtimeProject() {
     syncHistory,
     // Schemas
     projectSchemas,
+    // User stats
+    userStats,
   };
 }

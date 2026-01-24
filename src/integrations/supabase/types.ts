@@ -119,6 +119,44 @@ export type Database = {
           },
         ]
       }
+      project_user_stats: {
+        Row: {
+          connection_count: number
+          first_connected_at: string
+          id: string
+          last_connected_at: string
+          modification_count: number
+          project_id: string
+          username: string
+        }
+        Insert: {
+          connection_count?: number
+          first_connected_at?: string
+          id?: string
+          last_connected_at?: string
+          modification_count?: number
+          project_id: string
+          username: string
+        }
+        Update: {
+          connection_count?: number
+          first_connected_at?: string
+          id?: string
+          last_connected_at?: string
+          modification_count?: number
+          project_id?: string
+          username?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_user_stats_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       projects: {
         Row: {
           created_at: string

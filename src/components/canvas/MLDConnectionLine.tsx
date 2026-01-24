@@ -175,11 +175,16 @@ function getCardinalityPosition(
 }
 
 function getLabels(relationType: '1-1' | '1-N' | 'N-M') {
+  // En MLD: fromTable = table avec FK (côté N), toTable = table référencée (côté 1)
+  // Pour l'affichage Merise: from affiche la cardinalité côté fromTable, to affiche côté toTable
+  // Donc pour 1-N: fromTable a la FK donc est côté "many" (N), toTable est côté "one" (1)
   switch (relationType) {
     case '1-1':
       return { from: '1', to: '1' };
     case '1-N':
-      return { from: 'N', to: '1' };
+      // fromTable = table enfant (N), toTable = table parent (1)
+      // Afficher "1" côté from (table enfant reçoit 1 parent), "N" côté to (table parent a N enfants)
+      return { from: '1', to: 'N' };
     case 'N-M':
       return { from: 'N', to: 'M' };
     default:

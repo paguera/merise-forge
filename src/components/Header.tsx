@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
-import { Database, Moon, Sun, Save, FolderOpen, Archive, Upload, Users, Music, History, Layers, Shield, LogIn, User, LogOut, Crown, ShieldCheck } from 'lucide-react';
+import { Moon, Sun, Save, FolderOpen, Archive, Upload, Users, Music, History, Layers, Shield, LogIn, User, LogOut, Crown, ShieldCheck } from 'lucide-react';
+import { ThemeLogo } from '@/components/ThemeLogo';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -467,10 +468,8 @@ export function Header({ realtime }: HeaderProps) {
   return (
     <header className="flex items-center justify-between px-6 py-4 bg-card border-b border-border">
       <div className="flex items-center gap-3">
-        <Database className="w-8 h-8 text-primary" />
-        <div>
-          <h1 className="text-xl font-bold text-primary">Ressou Merize</h1>
-        </div>
+        <ThemeLogo size={42} />
+        <h1 className="text-xl font-bold text-primary">Ressou Merise</h1>
       </div>
 
       <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>

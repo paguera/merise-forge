@@ -30,6 +30,7 @@ export function transformMCDtoMLD(mcd: MeriseModel): MLDModel {
       isPrimaryKey: attr.isPrimaryKey,
       isForeignKey: false,
       isNullable: attr.isNullable,
+      isUnique: attr.isUnique,
     }));
 
     // Add default PK if none exists

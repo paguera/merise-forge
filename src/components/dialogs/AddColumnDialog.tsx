@@ -21,6 +21,7 @@ interface AddColumnDialogProps {
     type: string;
     isPrimaryKey: boolean;
     isNullable: boolean;
+    isUnique: boolean;
   }) => void;
 }
 
@@ -33,6 +34,7 @@ export function AddColumnDialog({ open, onOpenChange, onAdd }: AddColumnDialogPr
   const [typeLength, setTypeLength] = useState('255');
   const [isPrimaryKey, setIsPrimaryKey] = useState(false);
   const [isNullable, setIsNullable] = useState(false);
+  const [isUnique, setIsUnique] = useState(false);
 
   const needsLength = TYPES_WITH_LENGTH.includes(baseType);
   const fullType = needsLength && typeLength ? `${baseType}(${typeLength})` : baseType;
@@ -44,6 +46,7 @@ export function AddColumnDialog({ open, onOpenChange, onAdd }: AddColumnDialogPr
         type: fullType,
         isPrimaryKey,
         isNullable: isPrimaryKey ? false : isNullable,
+        isUnique,
       });
       resetForm();
       onOpenChange(false);
@@ -56,6 +59,7 @@ export function AddColumnDialog({ open, onOpenChange, onAdd }: AddColumnDialogPr
     setTypeLength('255');
     setIsPrimaryKey(false);
     setIsNullable(false);
+    setIsUnique(false);
   };
 
   return (
@@ -129,6 +133,15 @@ export function AddColumnDialog({ open, onOpenChange, onAdd }: AddColumnDialogPr
                 onCheckedChange={(checked) => setIsNullable(checked as boolean)}
               />
               <Label htmlFor="nullable" className="text-sm">Nullable</Label>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="unique"
+                checked={isUnique}
+                onCheckedChange={(checked) => setIsUnique(checked as boolean)}
+              />
+              <Label htmlFor="unique" className="text-sm">Unique</Label>
             </div>
           </div>
         </div>

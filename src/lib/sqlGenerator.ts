@@ -17,6 +17,10 @@ export function generateSQL(model: MLDModel, dialect: SQLDialect): string {
         def += ' NOT NULL';
       }
       
+      if (column.isUnique && !column.isPrimaryKey) {
+        def += ' UNIQUE';
+      }
+      
       if (column.isPrimaryKey && !table.isJunction) {
         def += ' AUTO_INCREMENT';
       }

@@ -5,6 +5,7 @@ import {
   LogIn, User, LogOut, Crown, Shield, Bookmark, Sparkles,
   Palette
 } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ThemeLogo } from '@/components/ThemeLogo';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -471,6 +472,7 @@ export function Header({ realtime }: HeaderProps) {
   };
 
   return (
+    <TooltipProvider delayDuration={200}>
     <header className="flex items-center justify-between px-6 py-4 bg-card/80 backdrop-blur-md border-b border-border/50 sticky top-0 z-50">
       <div className="flex items-center gap-3">
         <ThemeLogo size={42} />
@@ -568,53 +570,78 @@ export function Header({ realtime }: HeaderProps) {
             </DropdownMenuContent>
           </DropdownMenu>
         ) : (
-          <Button variant="ghost" size="icon" onClick={() => navigate('/auth')} title="Connexion" className="hover:bg-primary/10">
-            <LogIn className="w-5 h-5" />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" onClick={() => navigate('/auth')} className="hover:bg-primary/10">
+                <LogIn className="w-5 h-5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="animate-scale-in">
+              <p>Connexion</p>
+            </TooltipContent>
+          </Tooltip>
         )}
 
         <div className="w-px h-6 bg-border/50 mx-1" />
 
         {/* Collaboration Group */}
-        <Button
-          variant={realtime.connected ? 'default' : 'ghost'}
-          size="icon"
-          onClick={() => setCollabOpen(true)}
-          title="Collaboration"
-          className={realtime.connected ? 'bg-accent hover:bg-accent/90' : 'hover:bg-primary/10'}
-        >
-          <UsersRound className="w-5 h-5" />
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant={realtime.connected ? 'default' : 'ghost'}
+              size="icon"
+              onClick={() => setCollabOpen(true)}
+              className={realtime.connected ? 'bg-accent hover:bg-accent/90' : 'hover:bg-primary/10'}
+            >
+              <UsersRound className="w-5 h-5" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="animate-scale-in">
+            <p>Collaboration</p>
+          </TooltipContent>
+        </Tooltip>
 
         {realtime.connected && (
           <>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setHistoryOpen(true)}
-              title="Historique des synchros"
-              className="relative hover:bg-primary/10"
-            >
-              <Clock className="w-5 h-5" />
-              {realtime.syncHistory.pendingCount > 0 && (
-                <Badge 
-                  variant="destructive" 
-                  className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs animate-pulse"
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setHistoryOpen(true)}
+                  className="relative hover:bg-primary/10"
                 >
-                  {realtime.syncHistory.pendingCount}
-                </Badge>
-              )}
-            </Button>
+                  <Clock className="w-5 h-5" />
+                  {realtime.syncHistory.pendingCount > 0 && (
+                    <Badge 
+                      variant="destructive" 
+                      className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs animate-pulse"
+                    >
+                      {realtime.syncHistory.pendingCount}
+                    </Badge>
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="animate-scale-in">
+                <p>Historique</p>
+              </TooltipContent>
+            </Tooltip>
 
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setSchemasOpen(true)}
-              title="Gérer les schémas"
-              className="hover:bg-primary/10"
-            >
-              <Layers className="w-5 h-5" />
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setSchemasOpen(true)}
+                  className="hover:bg-primary/10"
+                >
+                  <Layers className="w-5 h-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="animate-scale-in">
+                <p>Schémas</p>
+              </TooltipContent>
+            </Tooltip>
 
             {realtime.isAdmin && (
               <Badge className="gap-1 admin-badge-gold font-semibold">
@@ -628,48 +655,84 @@ export function Header({ realtime }: HeaderProps) {
         <div className="w-px h-6 bg-border/50 mx-1" />
 
         {/* Project Actions */}
-        <Button variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} title="Importer SQL" className="hover:bg-primary/10">
-          <Upload className="w-5 h-5" />
-        </Button>
-        <Button variant="ghost" size="icon" onClick={() => setSaveOpen(true)} title="Sauvegarder" className="hover:bg-primary/10">
-          <Bookmark className="w-5 h-5" />
-        </Button>
-        <Button variant="ghost" size="icon" onClick={() => setLoadOpen(true)} title="Charger" className="hover:bg-primary/10">
-          <FolderOpen className="w-5 h-5" />
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} className="hover:bg-primary/10">
+              <Upload className="w-5 h-5" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="animate-scale-in">
+            <p>Importer SQL</p>
+          </TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="icon" onClick={() => setSaveOpen(true)} className="hover:bg-primary/10">
+              <Bookmark className="w-5 h-5" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="animate-scale-in">
+            <p>Sauvegarder</p>
+          </TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="icon" onClick={() => setLoadOpen(true)} className="hover:bg-primary/10">
+              <FolderOpen className="w-5 h-5" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="animate-scale-in">
+            <p>Charger</p>
+          </TooltipContent>
+        </Tooltip>
 
         <div className="w-px h-6 bg-border/50 mx-1" />
 
         {/* Theme Toggle */}
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          onClick={cycleTheme} 
-          title={`Thème: ${theme}`}
-          className="hover:bg-primary/10"
-        >
-          {theme === 'dark' ? (
-            <Sun className="w-5 h-5 text-amber-400" />
-          ) : theme === 'spotify' ? (
-            <Music className="w-5 h-5 text-accent" />
-          ) : (
-            <Moon className="w-5 h-5 text-primary" />
-          )}
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={cycleTheme} 
+              className="hover:bg-primary/10"
+            >
+              {theme === 'dark' ? (
+                <Sun className="w-5 h-5 text-amber-400" />
+              ) : theme === 'spotify' ? (
+                <Music className="w-5 h-5 text-accent" />
+              ) : (
+                <Moon className="w-5 h-5 text-primary" />
+              )}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="animate-scale-in">
+            <p>Thème: {theme === 'dark' ? 'Sombre' : theme === 'spotify' ? 'Spotify' : 'Clair'}</p>
+          </TooltipContent>
+        </Tooltip>
 
         {/* Export ZIP */}
-        <Button 
-          variant="secondary" 
-          onClick={handleExportZip} 
-          disabled={!mldModel} 
-          className="relative gap-2 bg-gradient-to-r from-primary/10 to-accent/10 hover:from-primary/20 hover:to-accent/20 border border-border/50"
-        >
-          <FileArchive className="w-4 h-4" />
-          <span className="hidden sm:inline">Export</span>
-          {!isPremium && (
-            <Crown className="w-3 h-3 text-amber-500 absolute -top-1 -right-1" />
-          )}
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button 
+              variant="secondary" 
+              onClick={handleExportZip} 
+              disabled={!mldModel} 
+              className="relative gap-2 bg-gradient-to-r from-primary/10 to-accent/10 hover:from-primary/20 hover:to-accent/20 border border-border/50"
+            >
+              <FileArchive className="w-4 h-4" />
+              <span className="hidden sm:inline">Export</span>
+              {!isPremium && (
+                <Crown className="w-3 h-3 text-amber-500 absolute -top-1 -right-1" />
+              )}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="animate-scale-in">
+            <p>Exporter ZIP</p>
+          </TooltipContent>
+        </Tooltip>
       </div>
 
       <SaveProjectDialog open={saveOpen} onOpenChange={setSaveOpen} onSave={handleSaveProject} />
@@ -734,5 +797,6 @@ export function Header({ realtime }: HeaderProps) {
         }}
       />
     </header>
+    </TooltipProvider>
   );
 }

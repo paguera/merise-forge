@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Pencil, RotateCcw } from 'lucide-react';
+import { X, Pencil, RotateCcw, ArrowRight, Plus, Sparkles, Database, Link2, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +9,7 @@ import { Entity, Relation } from '@/types/merise';
 import { EditEntityDialog } from '@/components/dialogs/EditEntityDialog';
 import { EditRelationDialog } from '@/components/dialogs/EditRelationDialog';
 import { toast } from 'sonner';
+import { motion, AnimatePresence } from 'framer-motion';
 
 type CreationStep = 'entity1' | 'verb' | 'entity2' | 'cardinalities';
 
@@ -22,16 +23,38 @@ const cardinalityDescriptions = {
 const getCardinalityExplanation = (cardinality: string, isRequired: boolean) => {
   switch (cardinality) {
     case '0,1':
-      return { text: 'ZÉRO ou UN (Optionnel)', color: 'text-blue-600' };
+      return { text: 'ZÉRO ou UN', color: 'text-blue-500', bg: 'bg-blue-500/10' };
     case '1,1':
-      return { text: 'EXACTEMENT UNE (Obligatoire)', color: 'text-green-600' };
+      return { text: 'EXACTEMENT UN', color: 'text-emerald-500', bg: 'bg-emerald-500/10' };
     case '0,n':
-      return { text: 'ZÉRO ou PLUSIEURS (Optionnel)', color: 'text-blue-600' };
+      return { text: 'ZÉRO ou PLUS', color: 'text-blue-500', bg: 'bg-blue-500/10' };
     case '1,n':
-      return { text: 'UN ou PLUSIEURS (Obligatoire)', color: 'text-green-600' };
+      return { text: 'UN ou PLUS', color: 'text-emerald-500', bg: 'bg-emerald-500/10' };
     default:
-      return { text: '', color: '' };
+      return { text: '', color: '', bg: '' };
   }
+};
+
+// Step indicator component
+const StepIndicator = ({ step, currentStep }: { step: CreationStep; currentStep: CreationStep }) => {
+  const steps: CreationStep[] = ['entity1', 'verb', 'entity2', 'cardinalities'];
+  const currentIndex = steps.indexOf(currentStep);
+  const stepIndex = steps.indexOf(step);
+  const isActive = stepIndex === currentIndex;
+  const isCompleted = stepIndex < currentIndex;
+
+  return (
+    <motion.div
+      className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
+        isActive 
+          ? 'bg-primary scale-125 ring-4 ring-primary/20' 
+          : isCompleted 
+            ? 'bg-primary' 
+            : 'bg-muted-foreground/30'
+      }`}
+      animate={{ scale: isActive ? 1.25 : 1 }}
+    />
+  );
 };
 
 export function MCDSidebar() {
@@ -49,10 +72,8 @@ export function MCDSidebar() {
   const [cardinality1, setCardinality1] = useState<'0,1' | '1,1' | '0,n' | '1,n'>('1,1');
   const [cardinality2, setCardinality2] = useState<'0,1' | '1,1' | '0,n' | '1,n'>('0,n');
 
-  // Get the current entity from the store (reactive to changes)
   const editingEntity = editingEntityId ? model.entities.find(e => e.id === editingEntityId) || null : null;
 
-  // Get entity names for display
   const getEntity1Name = () => {
     if (isNewEntity1) return entity1Name;
     const entity = model.entities.find(e => e.id === selectedEntity1Id);
@@ -117,6 +138,7 @@ export function MCDSidebar() {
           },
         };
         addRelation(newRelation);
+        toast.success('Relation créée avec succès !');
       }
       resetForm();
     }
@@ -161,319 +183,459 @@ export function MCDSidebar() {
   const card1Explanation = getCardinalityExplanation(cardinality1, cardinality1.startsWith('1'));
   const card2Explanation = getCardinalityExplanation(cardinality2, cardinality2.startsWith('1'));
 
+  const stepLabels = {
+    entity1: 'Entité Source',
+    verb: 'Association',
+    entity2: 'Entité Cible',
+    cardinalities: 'Cardinalités'
+  };
+
   return (
-    <div className="w-80 bg-card border-r border-border flex flex-col h-full overflow-hidden">
-      <div className="p-5 space-y-5 flex-1 overflow-y-auto">
-        {/* Relation Creator */}
-        <div className="bg-secondary/50 rounded-lg p-5 space-y-4">
-          <h2 className="text-lg font-semibold text-foreground">Créateur de Relations</h2>
-          
-          {/* Progress bar - 4 steps */}
-          <div className="flex gap-1">
-            <div className={`h-1 flex-1 rounded-full transition-colors ${['entity1', 'verb', 'entity2', 'cardinalities'].includes(step) ? 'bg-primary' : 'bg-border'}`} />
-            <div className={`h-1 flex-1 rounded-full transition-colors ${['verb', 'entity2', 'cardinalities'].includes(step) ? 'bg-primary' : 'bg-border'}`} />
-            <div className={`h-1 flex-1 rounded-full transition-colors ${['entity2', 'cardinalities'].includes(step) ? 'bg-primary' : 'bg-border'}`} />
-            <div className={`h-1 flex-1 rounded-full transition-colors ${step === 'cardinalities' ? 'bg-primary' : 'bg-border'}`} />
+    <div className="w-80 bg-card/50 backdrop-blur-sm border-r border-border/50 flex flex-col h-full overflow-hidden">
+      <div className="p-4 space-y-4 flex-1 overflow-y-auto">
+        
+        {/* Modern Relation Creator */}
+        <div className="relative overflow-hidden rounded-xl border border-border/50 bg-gradient-to-br from-background via-background to-primary/5">
+          {/* Header */}
+          <div className="px-4 py-3 border-b border-border/50 flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-primary/10">
+              <Sparkles className="w-4 h-4 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-sm font-semibold text-foreground">Créateur de Relations</h2>
+              <p className="text-xs text-muted-foreground">{stepLabels[step]}</p>
+            </div>
           </div>
 
-          {/* Step 1: Entité de départ */}
-          {step === 'entity1' && (
-            <div className="space-y-4 animate-fade-in">
-              <h3 className="font-medium">1. Entité de départ</h3>
-              
-              <Button 
-                variant={isNewEntity1 ? 'outline' : 'secondary'}
-                className="w-full"
-                onClick={() => setIsNewEntity1(true)}
-              >
-                Nouvelle
-              </Button>
+          {/* Step Progress */}
+          <div className="px-4 py-3 flex items-center justify-center gap-3">
+            {(['entity1', 'verb', 'entity2', 'cardinalities'] as CreationStep[]).map((s, i) => (
+              <div key={s} className="flex items-center gap-3">
+                <StepIndicator step={s} currentStep={step} />
+                {i < 3 && <ChevronRight className="w-3 h-3 text-muted-foreground/50" />}
+              </div>
+            ))}
+          </div>
 
-              {isNewEntity1 ? (
-                <Input
-                  placeholder="Nom de l'entité"
-                  value={entity1Name}
-                  onChange={(e) => setEntity1Name(e.target.value)}
-                  className="border-primary"
-                />
-              ) : (
-                <Select value={selectedEntity1Id} onValueChange={setSelectedEntity1Id}>
-                  <SelectTrigger className="border-primary">
-                    <SelectValue placeholder="Sélectionner une entité" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {model.entities.map((e) => (
-                      <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+          {/* Step Content */}
+          <div className="px-4 pb-4">
+            <AnimatePresence mode="wait">
+              {/* Step 1: Source Entity */}
+              {step === 'entity1' && (
+                <motion.div
+                  key="entity1"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="space-y-3"
+                >
+                  <div className="flex gap-2">
+                    <Button 
+                      variant={isNewEntity1 ? 'default' : 'outline'}
+                      size="sm"
+                      className="flex-1 gap-2"
+                      onClick={() => setIsNewEntity1(true)}
+                    >
+                      <Plus className="w-3 h-3" />
+                      Nouvelle
+                    </Button>
+                    {model.entities.length > 0 && (
+                      <Button 
+                        variant={!isNewEntity1 ? 'default' : 'outline'}
+                        size="sm"
+                        className="flex-1 gap-2"
+                        onClick={() => setIsNewEntity1(false)}
+                      >
+                        <Database className="w-3 h-3" />
+                        Existante
+                      </Button>
+                    )}
+                  </div>
+
+                  {isNewEntity1 ? (
+                    <Input
+                      placeholder="Nom de l'entité..."
+                      value={entity1Name}
+                      onChange={(e) => setEntity1Name(e.target.value)}
+                      className="bg-background/50 border-primary/30 focus:border-primary"
+                    />
+                  ) : (
+                    <Select value={selectedEntity1Id} onValueChange={setSelectedEntity1Id}>
+                      <SelectTrigger className="bg-background/50 border-primary/30">
+                        <SelectValue placeholder="Sélectionner..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {model.entities.map((e) => (
+                          <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </motion.div>
               )}
 
-              {model.entities.length > 0 && (
+              {/* Step 2: Verb */}
+              {step === 'verb' && (
+                <motion.div
+                  key="verb"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="space-y-3"
+                >
+                  <div className="flex items-center gap-2 text-sm">
+                    <Badge variant="secondary" className="bg-primary/10 text-primary border-0">
+                      {entity1Display}
+                    </Badge>
+                    <ArrowRight className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-muted-foreground">?</span>
+                  </div>
+
+                  <Input
+                    placeholder="Verbe (ex: Possède, Achète...)"
+                    value={verbName}
+                    onChange={(e) => setVerbName(e.target.value)}
+                    className="bg-background/50 border-primary/30 focus:border-primary"
+                  />
+                </motion.div>
+              )}
+
+              {/* Step 3: Target Entity */}
+              {step === 'entity2' && (
+                <motion.div
+                  key="entity2"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="space-y-3"
+                >
+                  <div className="flex items-center gap-2 text-sm">
+                    <Badge variant="secondary" className="bg-primary/10 text-primary border-0">
+                      {entity1Display}
+                    </Badge>
+                    <Badge variant="outline" className="border-accent text-accent">
+                      {verbName}
+                    </Badge>
+                    <ArrowRight className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-muted-foreground">?</span>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button 
+                      variant={isNewEntity2 ? 'default' : 'outline'}
+                      size="sm"
+                      className="flex-1 gap-2"
+                      onClick={() => setIsNewEntity2(true)}
+                    >
+                      <Plus className="w-3 h-3" />
+                      Nouvelle
+                    </Button>
+                    {model.entities.filter(e => e.id !== selectedEntity1Id).length > 0 && (
+                      <Button 
+                        variant={!isNewEntity2 ? 'default' : 'outline'}
+                        size="sm"
+                        className="flex-1 gap-2"
+                        onClick={() => setIsNewEntity2(false)}
+                      >
+                        <Database className="w-3 h-3" />
+                        Existante
+                      </Button>
+                    )}
+                  </div>
+
+                  {isNewEntity2 ? (
+                    <Input
+                      placeholder="Nom de l'entité..."
+                      value={entity2Name}
+                      onChange={(e) => setEntity2Name(e.target.value)}
+                      className="bg-background/50 border-primary/30 focus:border-primary"
+                    />
+                  ) : (
+                    <Select value={selectedEntity2Id} onValueChange={setSelectedEntity2Id}>
+                      <SelectTrigger className="bg-background/50 border-primary/30">
+                        <SelectValue placeholder="Sélectionner..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {model.entities.filter(e => e.id !== selectedEntity1Id).map((e) => (
+                          <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </motion.div>
+              )}
+
+              {/* Step 4: Cardinalities */}
+              {step === 'cardinalities' && (
+                <motion.div
+                  key="cardinalities"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="space-y-3"
+                >
+                  {/* Preview */}
+                  <div className="flex items-center justify-center gap-2 text-xs py-2">
+                    <Badge variant="secondary" className="bg-primary/10 text-primary border-0">
+                      {entity1Display}
+                    </Badge>
+                    <Link2 className="w-3 h-3 text-accent" />
+                    <Badge variant="outline" className="border-accent text-accent">
+                      {verbName}
+                    </Badge>
+                    <Link2 className="w-3 h-3 text-accent" />
+                    <Badge variant="secondary" className="bg-primary/10 text-primary border-0">
+                      {entity2Display}
+                    </Badge>
+                  </div>
+
+                  {/* Cardinality 1 */}
+                  <div className="p-3 rounded-lg bg-background/50 border border-border/50 space-y-2">
+                    <p className="text-xs text-muted-foreground">
+                      Un(e) <span className="text-primary font-medium">{entity1Display}</span> peut {verbName.toLowerCase()}...
+                    </p>
+                    <Select value={cardinality1} onValueChange={(v) => setCardinality1(v as any)}>
+                      <SelectTrigger className="h-8 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="0,1">0,1 - Zéro ou un(e)</SelectItem>
+                        <SelectItem value="1,1">1,1 - Exactement un(e)</SelectItem>
+                        <SelectItem value="0,n">0,n - Zéro ou plusieurs</SelectItem>
+                        <SelectItem value="1,n">1,n - Un ou plusieurs</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Badge variant="secondary" className={`${card1Explanation.bg} ${card1Explanation.color} border-0 text-xs`}>
+                      {card1Explanation.text}
+                    </Badge>
+                  </div>
+
+                  {/* Cardinality 2 */}
+                  <div className="p-3 rounded-lg bg-background/50 border border-border/50 space-y-2">
+                    <p className="text-xs text-muted-foreground">
+                      Un(e) <span className="text-primary font-medium">{entity2Display}</span> peut être {verbName.toLowerCase()} par...
+                    </p>
+                    <Select value={cardinality2} onValueChange={(v) => setCardinality2(v as any)}>
+                      <SelectTrigger className="h-8 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="0,1">0,1 - Zéro ou un(e)</SelectItem>
+                        <SelectItem value="1,1">1,1 - Exactement un(e)</SelectItem>
+                        <SelectItem value="0,n">0,n - Zéro ou plusieurs</SelectItem>
+                        <SelectItem value="1,n">1,n - Un ou plusieurs</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Badge variant="secondary" className={`${card2Explanation.bg} ${card2Explanation.color} border-0 text-xs`}>
+                      {card2Explanation.text}
+                    </Badge>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Navigation */}
+            <div className="flex gap-2 mt-4">
+              {step !== 'entity1' && (
                 <Button 
                   variant="ghost"
-                  className="w-full text-muted-foreground"
-                  onClick={() => setIsNewEntity1(false)}
+                  size="sm"
+                  onClick={handleBack}
+                  className="flex-1"
                 >
-                  Ou sélectionner une existante
+                  Retour
                 </Button>
               )}
-            </div>
-          )}
-
-          {/* Step 2: L'Association (verbe) */}
-          {step === 'verb' && (
-            <div className="space-y-4 animate-fade-in">
-              <h3 className="font-medium">2. L'Association</h3>
-              <p className="text-sm text-muted-foreground">
-                Action reliant <span className="text-primary font-medium">{entity1Display}</span> ?
-              </p>
-              
-              <Input
-                placeholder="Verbe (ex: Possède, Achète)"
-                value={verbName}
-                onChange={(e) => setVerbName(e.target.value)}
-                className="border-primary"
-              />
-            </div>
-          )}
-
-          {/* Step 3: Entité d'arrivée */}
-          {step === 'entity2' && (
-            <div className="space-y-4 animate-fade-in">
-              <h3 className="font-medium">3. Entité d'arrivée</h3>
-              
               <Button 
-                variant={isNewEntity2 ? 'outline' : 'secondary'}
-                className="w-full"
-                onClick={() => setIsNewEntity2(true)}
+                onClick={handleNext} 
+                size="sm"
+                className={`${step === 'entity1' ? 'w-full' : 'flex-1'} ${
+                  step === 'cardinalities' 
+                    ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white' 
+                    : ''
+                }`}
+                disabled={!canProceed()}
               >
-                Nouvelle
+                {step === 'cardinalities' ? (
+                  <>
+                    <Sparkles className="w-3 h-3 mr-2" />
+                    Générer
+                  </>
+                ) : (
+                  <>
+                    Suivant
+                    <ChevronRight className="w-3 h-3 ml-1" />
+                  </>
+                )}
               </Button>
-
-              {isNewEntity2 ? (
-                <Input
-                  placeholder="Nom de l'entité"
-                  value={entity2Name}
-                  onChange={(e) => setEntity2Name(e.target.value)}
-                  className="border-primary"
-                />
-              ) : (
-                <Select value={selectedEntity2Id} onValueChange={setSelectedEntity2Id}>
-                  <SelectTrigger className="border-primary">
-                    <SelectValue placeholder="Sélectionner une entité" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {model.entities.filter(e => e.id !== selectedEntity1Id).map((e) => (
-                      <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-
-              {model.entities.filter(e => e.id !== selectedEntity1Id).length > 0 && (
-                <Button 
-                  variant="ghost"
-                  className="w-full text-muted-foreground"
-                  onClick={() => setIsNewEntity2(false)}
-                >
-                  Ou sélectionner une existante
-                </Button>
-              )}
             </div>
-          )}
-
-          {/* Step 4: Cardinalités */}
-          {step === 'cardinalities' && (
-            <div className="space-y-5 animate-fade-in">
-              <h3 className="font-medium">4. Cardinalités</h3>
-              
-              {/* Direction 1: Entity1 → Entity2 */}
-              <div className="space-y-3 p-3 bg-background rounded-lg border border-border">
-                <Badge variant="secondary" className="bg-primary/10 text-primary border-0">
-                  Sens {entity1Display} → {entity2Display}
-                </Badge>
-                
-                <p className="text-sm">
-                  Un(e) <span className="font-semibold">{entity1Display}</span> peut{' '}
-                  <span className="italic text-primary">{verbName.toUpperCase()}</span>...
-                </p>
-                
-                <Select value={cardinality1} onValueChange={(v) => setCardinality1(v as any)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="0,1">0,1 - Zéro ou un(e)</SelectItem>
-                    <SelectItem value="1,1">1,1 - Exactement un(e)</SelectItem>
-                    <SelectItem value="0,n">0,n - Zéro ou plusieurs</SelectItem>
-                    <SelectItem value="1,n">1,n - Un ou plusieurs</SelectItem>
-                  </SelectContent>
-                </Select>
-                
-                <p className="text-sm flex items-start gap-2">
-                  <span className="text-muted-foreground">→</span>
-                  <span>
-                    Un(e) {entity1Display} {verbName.toUpperCase()}{' '}
-                    <span className={card1Explanation.color}>{card1Explanation.text}</span>{' '}
-                    {entity2Display}.
-                  </span>
-                </p>
-              </div>
-
-              {/* Direction 2: Entity2 → Entity1 */}
-              <div className="space-y-3 p-3 bg-background rounded-lg border border-border">
-                <Badge variant="secondary" className="bg-primary/10 text-primary border-0">
-                  Sens {entity2Display} → {entity1Display}
-                </Badge>
-                
-                <p className="text-sm">
-                  Inversement, un(e) <span className="font-semibold text-primary">{entity2Display}</span> peut être{' '}
-                  <span className="italic text-primary">{verbName.toUpperCase()}</span> par...
-                </p>
-                
-                <Select value={cardinality2} onValueChange={(v) => setCardinality2(v as any)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="0,1">0,1 - Zéro ou un(e)</SelectItem>
-                    <SelectItem value="1,1">1,1 - Exactement un(e)</SelectItem>
-                    <SelectItem value="0,n">0,n - Zéro ou plusieurs {entity1Display}</SelectItem>
-                    <SelectItem value="1,n">1,n - Un ou plusieurs {entity1Display}</SelectItem>
-                  </SelectContent>
-                </Select>
-                
-                <p className="text-sm flex items-start gap-2">
-                  <span className="text-muted-foreground">→</span>
-                  <span>
-                    Un(e) {entity2Display} est {verbName.toUpperCase()} par{' '}
-                    <span className={card2Explanation.color}>{card2Explanation.text}</span>{' '}
-                    {entity1Display}.
-                  </span>
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Navigation buttons */}
-          <div className="flex gap-2">
-            {step !== 'entity1' && (
-              <Button 
-                variant="ghost"
-                onClick={handleBack}
-                className="flex-1"
-              >
-                Retour
-              </Button>
-            )}
-            <Button 
-              onClick={handleNext} 
-              className={`${step === 'entity1' ? 'w-full' : 'flex-1'} ${step === 'cardinalities' ? 'bg-green-600 hover:bg-green-700' : ''}`}
-              disabled={!canProceed()}
-            >
-              {step === 'cardinalities' ? 'Générer le modèle' : 'Suivant'}
-            </Button>
           </div>
         </div>
 
-        {/* Entities & Relations List */}
-        <div className="bg-secondary/50 rounded-lg p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-foreground">Données</h3>
+        {/* Modern Data Overview */}
+        <div className="rounded-xl border border-border/50 bg-gradient-to-br from-background via-background to-accent/5 overflow-hidden">
+          <div className="px-4 py-3 border-b border-border/50 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-accent/10">
+                <Database className="w-4 h-4 text-accent" />
+              </div>
+              <h3 className="text-sm font-semibold text-foreground">Données</h3>
+            </div>
             <Button
               variant="ghost"
               size="sm"
-              className="text-destructive hover:text-destructive"
+              className="text-destructive hover:text-destructive hover:bg-destructive/10 h-7 px-2"
               onClick={() => {
                 resetModel();
                 toast.success('Modèle réinitialisé');
               }}
             >
-              <RotateCcw className="w-4 h-4 mr-1" />
+              <RotateCcw className="w-3 h-3 mr-1" />
               Reset
             </Button>
           </div>
           
-          <div>
-            <p className="text-xs text-primary font-medium uppercase tracking-wide mb-2">
-              Entités ({model.entities.length})
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {model.entities.map((entity) => (
-                <Badge key={entity.id} variant="secondary" className="px-3 py-1 gap-2">
-                  {entity.name}
-                  <button 
-                    onClick={() => setEditingEntityId(entity.id)}
-                    className="hover:text-primary transition-colors"
+          <div className="p-4 space-y-4">
+            {/* Entities */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  Entités ({model.entities.length})
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {model.entities.map((entity) => (
+                  <motion.div
+                    key={entity.id}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="group"
                   >
-                    <Pencil className="w-3 h-3" />
-                  </button>
-                  <button 
-                    onClick={() => removeEntity(entity.id)}
-                    className="hover:text-destructive transition-colors"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </Badge>
-              ))}
-              {model.entities.length === 0 && (
-                <span className="text-sm text-muted-foreground italic">Vide</span>
-              )}
+                    <Badge 
+                      variant="secondary" 
+                      className="px-2 py-1 gap-1.5 bg-primary/5 hover:bg-primary/10 transition-colors cursor-default"
+                    >
+                      <span className="text-xs">{entity.name}</span>
+                      <button 
+                        onClick={() => setEditingEntityId(entity.id)}
+                        className="opacity-50 group-hover:opacity-100 hover:text-primary transition-all"
+                      >
+                        <Pencil className="w-2.5 h-2.5" />
+                      </button>
+                      <button 
+                        onClick={() => removeEntity(entity.id)}
+                        className="opacity-50 group-hover:opacity-100 hover:text-destructive transition-all"
+                      >
+                        <X className="w-2.5 h-2.5" />
+                      </button>
+                    </Badge>
+                  </motion.div>
+                ))}
+                {model.entities.length === 0 && (
+                  <span className="text-xs text-muted-foreground/50 italic">Aucune entité</span>
+                )}
+              </div>
             </div>
-          </div>
 
-          <div>
-            <p className="text-xs text-primary font-medium uppercase tracking-wide mb-2">
-              Relations ({model.relations.length})
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {model.relations.map((relation) => {
-                const e1 = model.entities.find(e => e.id === relation.entity1Id);
-                const e2 = model.entities.find(e => e.id === relation.entity2Id);
-                return (
-                  <Badge key={relation.id} variant="outline" className="px-3 py-1 gap-2">
-                    {e1?.name} — {relation.name} — {e2?.name}
-                    <button 
-                      onClick={() => setEditingRelation(relation)}
-                      className="hover:text-primary transition-colors"
+            {/* Relations */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-accent" />
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  Relations ({model.relations.length})
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {model.relations.map((relation) => {
+                  const e1 = model.entities.find(e => e.id === relation.entity1Id);
+                  const e2 = model.entities.find(e => e.id === relation.entity2Id);
+                  return (
+                    <motion.div
+                      key={relation.id}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="group"
                     >
-                      <Pencil className="w-3 h-3" />
-                    </button>
-                    <button 
-                      onClick={() => removeRelation(relation.id)}
-                      className="hover:text-destructive transition-colors"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </Badge>
-                );
-              })}
-              {model.relations.length === 0 && (
-                <span className="text-sm text-muted-foreground italic">Vide</span>
-              )}
+                      <Badge 
+                        variant="outline" 
+                        className="px-2 py-1 gap-1.5 border-accent/30 hover:border-accent/50 transition-colors cursor-default"
+                      >
+                        <span className="text-xs text-muted-foreground">{e1?.name}</span>
+                        <span className="text-xs text-accent font-medium">{relation.name}</span>
+                        <span className="text-xs text-muted-foreground">{e2?.name}</span>
+                        <button 
+                          onClick={() => setEditingRelation(relation)}
+                          className="opacity-50 group-hover:opacity-100 hover:text-primary transition-all"
+                        >
+                          <Pencil className="w-2.5 h-2.5" />
+                        </button>
+                        <button 
+                          onClick={() => removeRelation(relation.id)}
+                          className="opacity-50 group-hover:opacity-100 hover:text-destructive transition-all"
+                        >
+                          <X className="w-2.5 h-2.5" />
+                        </button>
+                      </Badge>
+                    </motion.div>
+                  );
+                })}
+                {model.relations.length === 0 && (
+                  <span className="text-xs text-muted-foreground/50 italic">Aucune relation</span>
+                )}
+              </div>
             </div>
           </div>
         </div>
       </div>
 
+      {/* Edit Dialogs */}
       <EditEntityDialog
         open={!!editingEntity}
         onOpenChange={(open) => !open && setEditingEntityId(null)}
         entity={editingEntity}
-        onSave={(updates) => editingEntity && updateEntity(editingEntity.id, updates)}
-        onAddAttribute={(attr) => editingEntity && addAttribute(editingEntity.id, attr)}
-        onUpdateAttribute={(attrId, updates) => editingEntity && updateAttribute(editingEntity.id, attrId, updates)}
-        onRemoveAttribute={(attrId) => editingEntity && removeAttribute(editingEntity.id, attrId)}
-        onReorderAttributes={(from, to) => editingEntity && reorderAttributes(editingEntity.id, from, to)}
+        onSave={(updates) => {
+          if (editingEntity) {
+            updateEntity(editingEntity.id, updates);
+          }
+        }}
+        onAddAttribute={(attr) => {
+          if (editingEntity) {
+            addAttribute(editingEntity.id, attr);
+          }
+        }}
+        onUpdateAttribute={(attrId, updates) => {
+          if (editingEntity) {
+            updateAttribute(editingEntity.id, attrId, updates);
+          }
+        }}
+        onRemoveAttribute={(attrId) => {
+          if (editingEntity) {
+            removeAttribute(editingEntity.id, attrId);
+          }
+        }}
+        onReorderAttributes={(from, to) => {
+          if (editingEntity) {
+            reorderAttributes(editingEntity.id, from, to);
+          }
+        }}
       />
 
       <EditRelationDialog
         open={!!editingRelation}
         onOpenChange={(open) => !open && setEditingRelation(null)}
         relation={editingRelation}
-        onSave={(updates) => editingRelation && updateRelation(editingRelation.id, updates)}
-        onDelete={() => editingRelation && removeRelation(editingRelation.id)}
+        onSave={(updates) => {
+          if (editingRelation) {
+            updateRelation(editingRelation.id, updates);
+          }
+        }}
+        onDelete={() => {
+          if (editingRelation) {
+            removeRelation(editingRelation.id);
+            setEditingRelation(null);
+          }
+        }}
       />
     </div>
   );

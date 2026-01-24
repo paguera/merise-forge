@@ -36,7 +36,7 @@ const getCardinalityExplanation = (cardinality: string, isRequired: boolean) => 
 
 export function MCDSidebar() {
   const { model, addEntity, addRelation, removeEntity, updateEntity, addAttribute, updateAttribute, removeAttribute, reorderAttributes, updateRelation, removeRelation, resetModel } = useMeriseStore();
-  const [editingEntity, setEditingEntity] = useState<Entity | null>(null);
+  const [editingEntityId, setEditingEntityId] = useState<string | null>(null);
   const [editingRelation, setEditingRelation] = useState<Relation | null>(null);
   const [step, setStep] = useState<CreationStep>('entity1');
   const [isNewEntity1, setIsNewEntity1] = useState(true);
@@ -48,6 +48,9 @@ export function MCDSidebar() {
   const [verbName, setVerbName] = useState('');
   const [cardinality1, setCardinality1] = useState<'0,1' | '1,1' | '0,n' | '1,n'>('1,1');
   const [cardinality2, setCardinality2] = useState<'0,1' | '1,1' | '0,n' | '1,n'>('0,n');
+
+  // Get the current entity from the store (reactive to changes)
+  const editingEntity = editingEntityId ? model.entities.find(e => e.id === editingEntityId) || null : null;
 
   // Get entity names for display
   const getEntity1Name = () => {
@@ -401,7 +404,7 @@ export function MCDSidebar() {
                 <Badge key={entity.id} variant="secondary" className="px-3 py-1 gap-2">
                   {entity.name}
                   <button 
-                    onClick={() => setEditingEntity(entity)}
+                    onClick={() => setEditingEntityId(entity.id)}
                     className="hover:text-primary transition-colors"
                   >
                     <Pencil className="w-3 h-3" />
@@ -456,7 +459,7 @@ export function MCDSidebar() {
 
       <EditEntityDialog
         open={!!editingEntity}
-        onOpenChange={(open) => !open && setEditingEntity(null)}
+        onOpenChange={(open) => !open && setEditingEntityId(null)}
         entity={editingEntity}
         onSave={(updates) => editingEntity && updateEntity(editingEntity.id, updates)}
         onAddAttribute={(attr) => editingEntity && addAttribute(editingEntity.id, attr)}

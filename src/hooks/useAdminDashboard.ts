@@ -198,7 +198,8 @@ export function useAdminDashboard(enabled: boolean = true, isSuperAdmin: boolean
       ? new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString()
       : null;
 
-    const { error } = await supabase
+    // Update profile
+    const { error: profileError } = await supabase
       .from('profiles')
       .update({ 
         is_premium: isPremium, 
@@ -206,8 +207,48 @@ export function useAdminDashboard(enabled: boolean = true, isSuperAdmin: boolean
       })
       .eq('user_id', userId);
 
-    if (!error) await fetchData();
-    return { error };
+    if (profileError) {
+      return { error: profileError };
+    }
+
+    // Create or update subscription record
+    if (isPremium) {
+      // Check if subscription exists
+      const { data: existingSub } = await supabase
+        .from('subscriptions')
+        .select('id')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (existingSub) {
+        await supabase
+          .from('subscriptions')
+          .update({
+            status: 'active',
+            expires_at: premiumUntil,
+          })
+          .eq('id', existingSub.id);
+      } else {
+        await supabase
+          .from('subscriptions')
+          .insert({
+            user_id: userId,
+            plan_name: 'Premium',
+            status: 'active',
+            started_at: new Date().toISOString(),
+            expires_at: premiumUntil,
+          });
+      }
+    } else {
+      // Deactivate subscription
+      await supabase
+        .from('subscriptions')
+        .update({ status: 'cancelled' })
+        .eq('user_id', userId);
+    }
+
+    await fetchData();
+    return { error: null };
   };
 
   const updateUserRole = async (userId: string, newRole: 'user' | 'admin' | 'super_admin') => {

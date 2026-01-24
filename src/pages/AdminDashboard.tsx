@@ -4,7 +4,8 @@ import {
   Users, Crown, Gift, Settings, LogOut, ArrowLeft, 
   Shield, ShieldCheck, User as UserIcon, Plus, Trash2, 
   ToggleLeft, ToggleRight, Search, RefreshCw, FolderOpen,
-  Ticket, Bell, Megaphone, UserCog, Sparkles, BarChart3
+  Ticket, Bell, Megaphone, UserCog, Sparkles, BarChart3,
+  Sun, Moon, Music, MessageSquare
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,10 +18,11 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdminDashboard } from '@/hooks/useAdminDashboard';
-import { ThemeLogo } from '@/components/ThemeLogo';
+import { useTheme } from '@/hooks/useTheme';
 
 // Admin sub-components
 import { AdminStatsCards } from '@/components/admin/AdminStatsCards';
@@ -32,10 +34,12 @@ import { SiteSettingsManager } from '@/components/admin/SiteSettingsManager';
 import { RoleManagementSection } from '@/components/admin/RoleManagementSection';
 import { FooterSettingsManager } from '@/components/admin/FooterSettingsManager';
 import { UsersManagementSection } from '@/components/admin/UsersManagementSection';
+import { ProjectChatViewer } from '@/components/admin/ProjectChatViewer';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const { user, profile, isSuperAdmin, isAdmin, signOut, loading: authLoading } = useAuth();
+  const { theme, cycleTheme } = useTheme();
   const { 
     users, promoCodes, subscriptions, projects, tickets, notifications, siteSettings,
     loading: dataLoading, refresh,
@@ -148,16 +152,13 @@ export default function AdminDashboard() {
           <Button variant="ghost" size="icon" onClick={() => navigate('/')} className="hover:bg-primary/10">
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <div className="flex items-center gap-3">
-            <ThemeLogo size={36} />
-            <div>
-              <h1 className="text-xl font-bold bg-gradient-to-r from-primary via-blue-400 to-primary bg-clip-text text-transparent">
-                Dashboard Admin
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                {isSuperAdmin ? 'Accès complet' : 'Accès limité'}
-              </p>
-            </div>
+          <div>
+            <h1 className="text-xl font-bold bg-gradient-to-r from-primary via-blue-400 to-primary bg-clip-text text-transparent">
+              Dashboard Admin
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {isSuperAdmin ? 'Accès complet' : 'Accès limité'}
+            </p>
           </div>
         </div>
         
@@ -166,6 +167,23 @@ export default function AdminDashboard() {
             {isSuperAdmin ? <ShieldCheck className="w-3 h-3" /> : <Shield className="w-3 h-3" />}
             {isSuperAdmin ? 'Super Admin' : 'Admin'}
           </Badge>
+          
+          {/* Theme Toggle */}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" onClick={cycleTheme} className="hover:bg-primary/10">
+                  {theme === 'light' && <Sun className="w-5 h-5" />}
+                  {theme === 'dark' && <Moon className="w-5 h-5" />}
+                  {theme === 'spotify' && <Music className="w-5 h-5 text-green-500" />}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Changer le thème</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          
           <Button variant="ghost" size="icon" onClick={refresh} className="hover:bg-primary/10">
             <RefreshCw className="w-5 h-5" />
           </Button>
@@ -348,35 +366,41 @@ export default function AdminDashboard() {
             />
           </TabsContent>
 
-          {/* Roles Tab - Super Admin Only */}
-          {isSuperAdmin && (
-            <TabsContent value="roles" className="space-y-4">
-              <Card className="mb-6 border-amber-500/30 bg-gradient-to-br from-amber-500/5 via-transparent to-transparent">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-amber-500">
-                    <Sparkles className="w-5 h-5" />
-                    Gestion des rôles et permissions
-                  </CardTitle>
-                  <CardDescription>
-                    Attribuez ou retirez les rôles Super Admin, Admin et Premium aux utilisateurs via les cases à cocher.
-                    <br />
-                    <span className="text-amber-500/80">Note: Vous ne pouvez pas modifier votre propre rôle, mais vous pouvez gérer votre statut Premium.</span>
-                  </CardDescription>
-                </CardHeader>
-              </Card>
-              <RoleManagementSection 
-                users={users}
-                isSuperAdmin={isSuperAdmin}
-                currentUserId={user?.id || ''}
-                onUpdateRole={updateUserRole}
-                onTogglePremium={togglePremium}
-              />
-            </TabsContent>
-          )}
-
           {/* Super Admin Only Tabs */}
           {isSuperAdmin && (
             <>
+              {/* Roles Tab */}
+              <TabsContent value="roles" className="space-y-4">
+                <Card className="mb-6 border-amber-500/30 bg-gradient-to-br from-amber-500/5 via-transparent to-transparent">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-amber-500">
+                      <Sparkles className="w-5 h-5" />
+                      Gestion des rôles et permissions
+                    </CardTitle>
+                    <CardDescription>
+                      Attribuez ou retirez les rôles Super Admin, Admin et Premium aux utilisateurs via les cases à cocher.
+                      <br />
+                      <span className="text-amber-500/80">Note: Vous ne pouvez pas modifier votre propre rôle, mais vous pouvez gérer votre statut Premium.</span>
+                    </CardDescription>
+                  </CardHeader>
+                </Card>
+                <RoleManagementSection 
+                  users={users}
+                  isSuperAdmin={isSuperAdmin}
+                  currentUserId={user?.id || ''}
+                  onUpdateRole={updateUserRole}
+                  onTogglePremium={togglePremium}
+                />
+              </TabsContent>
+
+              {/* Chats Tab */}
+              <TabsContent value="chats" className="space-y-4">
+                <ProjectChatViewer
+                  projects={projects}
+                  onSendMessage={sendGlobalMessage}
+                />
+              </TabsContent>
+
               {/* Promo Codes Tab */}
               <TabsContent value="promos" className="space-y-4">
                 <div className="flex justify-end">

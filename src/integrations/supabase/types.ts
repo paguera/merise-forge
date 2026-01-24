@@ -81,9 +81,49 @@ export type Database = {
           },
         ]
       }
+      project_schemas: {
+        Row: {
+          created_at: string
+          created_by: string
+          data: Json
+          id: string
+          name: string
+          project_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          data?: Json
+          id?: string
+          name: string
+          project_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          data?: Json
+          id?: string
+          name?: string
+          project_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_schemas_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       projects: {
         Row: {
           created_at: string
+          creator_id: string | null
+          current_schema_id: string | null
           data: Json
           id: string
           name: string
@@ -91,6 +131,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          creator_id?: string | null
+          current_schema_id?: string | null
           data?: Json
           id?: string
           name: string
@@ -98,12 +140,74 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          creator_id?: string | null
+          current_schema_id?: string | null
           data?: Json
           id?: string
           name?: string
           updated_at?: string
         }
         Relationships: []
+      }
+      sync_history: {
+        Row: {
+          action_summary: string
+          action_type: string
+          changes_detail: Json
+          created_at: string
+          id: string
+          project_id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          schema_id: string | null
+          snapshot: Json
+          status: string
+          username: string
+        }
+        Insert: {
+          action_summary: string
+          action_type: string
+          changes_detail?: Json
+          created_at?: string
+          id?: string
+          project_id: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          schema_id?: string | null
+          snapshot?: Json
+          status?: string
+          username: string
+        }
+        Update: {
+          action_summary?: string
+          action_type?: string
+          changes_detail?: Json
+          created_at?: string
+          id?: string
+          project_id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          schema_id?: string | null
+          snapshot?: Json
+          status?: string
+          username?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sync_history_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sync_history_schema_id_fkey"
+            columns: ["schema_id"]
+            isOneToOne: false
+            referencedRelation: "project_schemas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

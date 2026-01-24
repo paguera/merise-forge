@@ -26,7 +26,7 @@ export default function AdminDashboard() {
   const { 
     users, promoCodes, subscriptions, loading: dataLoading, 
     refresh, togglePremium, updateUserRole, createPromoCode, togglePromoCode, deletePromoCode 
-  } = useAdminData();
+  } = useAdminData(isAdmin);
   
   const [searchTerm, setSearchTerm] = useState('');
   const [createPromoOpen, setCreatePromoOpen] = useState(false);

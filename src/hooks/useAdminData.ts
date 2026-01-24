@@ -31,13 +31,21 @@ interface Subscription {
   user_email?: string;
 }
 
-export function useAdminData() {
+export function useAdminData(enabled: boolean = true) {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [promoCodes, setPromoCodes] = useState<PromoCode[]>([]);
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(enabled);
 
   const fetchData = useCallback(async () => {
+    if (!enabled) {
+      setUsers([]);
+      setPromoCodes([]);
+      setSubscriptions([]);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
       // Fetch all profiles
@@ -88,7 +96,7 @@ export function useAdminData() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [enabled]);
 
   useEffect(() => {
     fetchData();

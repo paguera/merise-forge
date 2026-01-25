@@ -1,9 +1,9 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { 
   Moon, Sun, CloudUpload, FolderOpen, FileArchive, 
   Upload, UsersRound, Music, Clock, Layers, ShieldCheck, 
   LogIn, User, LogOut, Crown, Shield, Bookmark, Sparkles,
-  Palette, HelpCircle
+  Palette, HelpCircle, Menu
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ThemeLogo } from '@/components/ThemeLogo';
@@ -13,9 +13,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { useMeriseStore } from '@/hooks/useMeriseStore';
 import { useTheme } from '@/hooks/useTheme';
 import { useAuth } from '@/hooks/useAuth';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { ViewMode, SQLDialect, Entity, Relation, Attribute } from '@/types/merise';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
@@ -38,6 +40,7 @@ export function Header({ realtime }: HeaderProps) {
   const { viewMode, setViewMode, sqlDialect, setSqlDialect, generatedSQL, mldModel, model, addEntity, addRelation } = useMeriseStore();
   const { theme, cycleTheme } = useTheme();
   const { user, profile, roles, isAdmin, isSuperAdmin, isPremium, signOut, updateProfile, refreshProfile } = useAuth();
+  const { settings, hasLogo, hasSiteName } = useSiteSettings();
   const [saveOpen, setSaveOpen] = useState(false);
   const [loadOpen, setLoadOpen] = useState(false);
   const [collabOpen, setCollabOpen] = useState(false);
@@ -45,6 +48,7 @@ export function Header({ realtime }: HeaderProps) {
   const [schemasOpen, setSchemasOpen] = useState(false);
   const [premiumOpen, setPremiumOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const parseSQLFile = (sql: string) => {
@@ -473,15 +477,30 @@ export function Header({ realtime }: HeaderProps) {
 
   return (
     <TooltipProvider delayDuration={200}>
-    <header className="flex items-center justify-between px-6 py-4 bg-card/80 backdrop-blur-md border-b border-border/50 sticky top-0 z-50">
-      <div className="flex items-center gap-3">
-        <ThemeLogo size={42} />
-        <h1 className="text-xl font-bold bg-gradient-to-r from-primary via-blue-400 to-primary bg-clip-text text-transparent">
-          Ressou Merise
-        </h1>
+    <header className="flex items-center justify-between px-3 sm:px-6 py-3 sm:py-4 bg-card/80 backdrop-blur-md border-b border-border/50 sticky top-0 z-50">
+      {/* Logo & Branding - Dynamic from settings */}
+      <div className="flex items-center gap-2 sm:gap-3">
+        {hasLogo() && settings.logo_url ? (
+          <img 
+            src={settings.logo_url} 
+            alt="Logo" 
+            className="w-8 h-8 sm:w-10 sm:h-10 object-contain"
+            onError={(e) => {
+              (e.target as HTMLImageElement).style.display = 'none';
+            }}
+          />
+        ) : hasLogo() ? null : (
+          <ThemeLogo size={36} className="hidden sm:block" />
+        )}
+        {hasSiteName() && settings.site_name && (
+          <h1 className="text-base sm:text-xl font-bold bg-gradient-to-r from-primary via-blue-400 to-primary bg-clip-text text-transparent hidden xs:block">
+            {settings.site_name}
+          </h1>
+        )}
       </div>
 
-      <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>
+      {/* Desktop Tabs */}
+      <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)} className="hidden md:block">
         <TabsList className="bg-secondary/50 backdrop-blur-sm border border-border/30">
           <TabsTrigger value="MCD" className="font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all">
             MCD
@@ -495,7 +514,8 @@ export function Header({ realtime }: HeaderProps) {
         </TabsList>
       </Tabs>
 
-      <div className="flex items-center gap-1.5">
+      {/* Mobile Menu + Desktop Actions */}
+      <div className="flex items-center gap-1 sm:gap-1.5">
         {viewMode === 'MPD' && (
           <Select value={sqlDialect} onValueChange={(v) => setSqlDialect(v as SQLDialect)}>
             <SelectTrigger className="w-28 bg-secondary/50 border-border/30">

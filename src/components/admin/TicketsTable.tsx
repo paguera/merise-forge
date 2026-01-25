@@ -10,6 +10,8 @@ import type { SupportTicket } from '@/hooks/useAdminDashboard';
 interface TicketsTableProps {
   tickets: SupportTicket[];
   onUpdateStatus: (id: string, status: string) => Promise<{ error: Error | null }>;
+  onSelectTicket?: (ticket: SupportTicket) => void;
+  selectedTicketId?: string;
 }
 
 const statusColors: Record<string, string> = {
@@ -40,7 +42,7 @@ const priorityLabels: Record<string, string> = {
   urgent: 'Urgente',
 };
 
-export function TicketsTable({ tickets, onUpdateStatus }: TicketsTableProps) {
+export function TicketsTable({ tickets, onUpdateStatus, onSelectTicket, selectedTicketId }: TicketsTableProps) {
   const handleStatusChange = async (id: string, status: string) => {
     const { error } = await onUpdateStatus(id, status);
     if (error) {
@@ -79,7 +81,11 @@ export function TicketsTable({ tickets, onUpdateStatus }: TicketsTableProps) {
         </TableHeader>
         <TableBody>
           {tickets.map((ticket) => (
-            <TableRow key={ticket.id}>
+            <TableRow 
+              key={ticket.id} 
+              className={`cursor-pointer transition-colors ${selectedTicketId === ticket.id ? 'bg-primary/10' : 'hover:bg-muted/50'}`}
+              onClick={() => onSelectTicket?.(ticket)}
+            >
               <TableCell>
                 <div className="flex items-center gap-2">
                   <Ticket className="w-4 h-4 text-muted-foreground" />

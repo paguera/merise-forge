@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Moon, Sun, CloudUpload, FolderOpen, FileArchive, Upload, UsersRound, Music, Clock, Layers, ShieldCheck, LogIn, User, LogOut, Crown, Shield, Bookmark, Sparkles, Palette, HelpCircle, Menu } from 'lucide-react';
+import { Moon, Sun, CloudUpload, FolderOpen, FileArchive, Upload, UsersRound, Music, Clock, Layers, ShieldCheck, User, LogOut, Crown, Shield, Bookmark, Sparkles, Palette, HelpCircle, Menu } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ThemeLogo } from '@/components/ThemeLogo';
 import { Button } from '@/components/ui/button';
@@ -577,7 +577,7 @@ export function Header({
           </DropdownMenu> : <Tooltip>
             <TooltipTrigger asChild>
               <Button variant="ghost" size="icon" onClick={() => navigate('/auth')} className="hover:bg-primary/10 rounded-3xl">
-                <LogIn className="w-5 h-5" />
+                <User className="w-5 h-5" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="animate-scale-in">

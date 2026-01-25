@@ -29,12 +29,14 @@ import { AdminStatsCards } from '@/components/admin/AdminStatsCards';
 import { AdminDashboardStats } from '@/components/admin/AdminDashboardStats';
 import { ProjectsTable } from '@/components/admin/ProjectsTable';
 import { TicketsTable } from '@/components/admin/TicketsTable';
+import { TicketConversation } from '@/components/admin/TicketConversation';
 import { NotificationsManager } from '@/components/admin/NotificationsManager';
 import { SiteSettingsManager } from '@/components/admin/SiteSettingsManager';
 import { RoleManagementSection } from '@/components/admin/RoleManagementSection';
 import { FooterSettingsManager } from '@/components/admin/FooterSettingsManager';
 import { UsersManagementSection } from '@/components/admin/UsersManagementSection';
-import { ProjectChatViewer } from '@/components/admin/ProjectChatViewer';
+import { EnhancedProjectChatViewer } from '@/components/admin/EnhancedProjectChatViewer';
+import { SubscriptionManager } from '@/components/admin/SubscriptionManager';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -51,6 +53,7 @@ export default function AdminDashboard() {
   
   const [searchTerm, setSearchTerm] = useState('');
   const [createPromoOpen, setCreatePromoOpen] = useState(false);
+  const [selectedTicket, setSelectedTicket] = useState<typeof tickets[0] | null>(null);
   const [newPromo, setNewPromo] = useState({
     code: '',
     discount_percent: 0,
@@ -147,35 +150,35 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
       {/* Header */}
-      <header className="flex items-center justify-between px-6 py-4 bg-card/80 backdrop-blur-md border-b border-border/50 sticky top-0 z-50">
-        <div className="flex items-center gap-4">
+      <header className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 bg-card/80 backdrop-blur-md border-b border-border/50 sticky top-0 z-50">
+        <div className="flex items-center gap-3 sm:gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate('/')} className="hover:bg-primary/10">
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6" />
           </Button>
           <div>
-            <h1 className="text-xl font-bold bg-gradient-to-r from-primary via-blue-400 to-primary bg-clip-text text-transparent">
+            <h1 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-primary via-blue-400 to-primary bg-clip-text text-transparent">
               Dashboard Admin
             </h1>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">
               {isSuperAdmin ? 'Accès complet' : 'Accès limité'}
             </p>
           </div>
         </div>
         
-        <div className="flex items-center gap-3">
-          <Badge className={isSuperAdmin ? "admin-badge-gold gap-1" : "gap-1 bg-primary/10 text-primary border-primary/30"}>
-            {isSuperAdmin ? <ShieldCheck className="w-3 h-3" /> : <Shield className="w-3 h-3" />}
-            {isSuperAdmin ? 'Super Admin' : 'Admin'}
+        <div className="flex items-center gap-2 sm:gap-3">
+          <Badge className={`${isSuperAdmin ? "admin-badge-gold" : "bg-primary/10 text-primary border-primary/30"} gap-1 text-xs sm:text-sm`}>
+            {isSuperAdmin ? <ShieldCheck className="w-3 h-3 sm:w-4 sm:h-4" /> : <Shield className="w-3 h-3 sm:w-4 sm:h-4" />}
+            <span className="hidden sm:inline">{isSuperAdmin ? 'Super Admin' : 'Admin'}</span>
           </Badge>
           
           {/* Theme Toggle */}
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" onClick={cycleTheme} className="hover:bg-primary/10">
-                  {theme === 'light' && <Sun className="w-5 h-5" />}
-                  {theme === 'dark' && <Moon className="w-5 h-5" />}
-                  {theme === 'spotify' && <Music className="w-5 h-5 text-green-500" />}
+                <Button variant="ghost" size="icon" onClick={cycleTheme} className="hover:bg-primary/10 w-9 h-9 sm:w-10 sm:h-10">
+                  {theme === 'light' && <Sun className="w-5 h-5 sm:w-6 sm:h-6" />}
+                  {theme === 'dark' && <Moon className="w-5 h-5 sm:w-6 sm:h-6" />}
+                  {theme === 'spotify' && <Music className="w-5 h-5 sm:w-6 sm:h-6 text-green-500" />}
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
@@ -184,17 +187,17 @@ export default function AdminDashboard() {
             </Tooltip>
           </TooltipProvider>
           
-          <Button variant="ghost" size="icon" onClick={refresh} className="hover:bg-primary/10">
-            <RefreshCw className="w-5 h-5" />
+          <Button variant="ghost" size="icon" onClick={refresh} className="hover:bg-primary/10 w-9 h-9 sm:w-10 sm:h-10">
+            <RefreshCw className="w-5 h-5 sm:w-6 sm:h-6" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={() => { signOut(); navigate('/auth'); }} className="hover:bg-destructive/10 hover:text-destructive">
-            <LogOut className="w-5 h-5" />
+          <Button variant="ghost" size="icon" onClick={() => { signOut(); navigate('/auth'); }} className="hover:bg-destructive/10 hover:text-destructive w-9 h-9 sm:w-10 sm:h-10">
+            <LogOut className="w-5 h-5 sm:w-6 sm:h-6" />
           </Button>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="p-6 max-w-7xl mx-auto">
+      <main className="p-3 sm:p-6 max-w-7xl mx-auto">
         {/* Stats Cards */}
         <AdminStatsCards
           usersCount={users.length}
@@ -208,44 +211,48 @@ export default function AdminDashboard() {
 
         {/* Tabs */}
         <Tabs defaultValue="stats" className="space-y-4">
-          <TabsList className="flex-wrap h-auto gap-1 bg-card/50 backdrop-blur-sm p-1.5 rounded-xl border border-border/50">
-            <TabsTrigger value="stats" className="gap-2 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all">
-              <BarChart3 className="w-4 h-4" />
-              Statistiques
+          <TabsList className="flex-wrap h-auto gap-1 bg-card/50 backdrop-blur-sm p-1.5 rounded-xl border border-border/50 neu-card">
+            <TabsTrigger value="stats" className="gap-1.5 sm:gap-2 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all text-xs sm:text-sm">
+              <BarChart3 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span className="hidden xs:inline">Stats</span>
             </TabsTrigger>
-            <TabsTrigger value="users" className="gap-2 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all">
-              <Users className="w-4 h-4" />
-              Utilisateurs
+            <TabsTrigger value="users" className="gap-1.5 sm:gap-2 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all text-xs sm:text-sm">
+              <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span className="hidden xs:inline">Users</span>
             </TabsTrigger>
-            <TabsTrigger value="projects" className="gap-2 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all">
-              <FolderOpen className="w-4 h-4" />
-              Projets
+            <TabsTrigger value="projects" className="gap-1.5 sm:gap-2 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all text-xs sm:text-sm">
+              <FolderOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span className="hidden xs:inline">Projets</span>
             </TabsTrigger>
-            <TabsTrigger value="tickets" className="gap-2 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all">
-              <Ticket className="w-4 h-4" />
-              Tickets
+            <TabsTrigger value="tickets" className="gap-1.5 sm:gap-2 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all text-xs sm:text-sm">
+              <Ticket className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span className="hidden xs:inline">Tickets</span>
             </TabsTrigger>
             {isSuperAdmin && (
               <>
-                <TabsTrigger value="roles" className="gap-2 rounded-lg data-[state=active]:bg-amber-500 data-[state=active]:text-black transition-all">
-                  <UserCog className="w-4 h-4" />
-                  Rôles
+                <TabsTrigger value="chats" className="gap-1.5 sm:gap-2 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all text-xs sm:text-sm">
+                  <MessageSquare className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <span className="hidden xs:inline">Chats</span>
                 </TabsTrigger>
-                <TabsTrigger value="promos" className="gap-2 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all">
-                  <Gift className="w-4 h-4" />
-                  Codes Promo
+                <TabsTrigger value="roles" className="gap-1.5 sm:gap-2 rounded-lg data-[state=active]:bg-amber-500 data-[state=active]:text-black transition-all text-xs sm:text-sm">
+                  <UserCog className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <span className="hidden xs:inline">Rôles</span>
                 </TabsTrigger>
-                <TabsTrigger value="subscriptions" className="gap-2 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all">
-                  <Crown className="w-4 h-4" />
-                  Abonnements
+                <TabsTrigger value="promos" className="gap-1.5 sm:gap-2 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all text-xs sm:text-sm">
+                  <Gift className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <span className="hidden xs:inline">Promos</span>
                 </TabsTrigger>
-                <TabsTrigger value="notifications" className="gap-2 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all">
-                  <Bell className="w-4 h-4" />
-                  Notifications
+                <TabsTrigger value="subscriptions" className="gap-1.5 sm:gap-2 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all text-xs sm:text-sm">
+                  <Crown className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <span className="hidden xs:inline">Abos</span>
                 </TabsTrigger>
-                <TabsTrigger value="settings" className="gap-2 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all">
-                  <Settings className="w-4 h-4" />
-                  Paramètres
+                <TabsTrigger value="notifications" className="gap-1.5 sm:gap-2 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all text-xs sm:text-sm">
+                  <Bell className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <span className="hidden xs:inline">Notifs</span>
+                </TabsTrigger>
+                <TabsTrigger value="settings" className="gap-1.5 sm:gap-2 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all text-xs sm:text-sm">
+                  <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <span className="hidden xs:inline">Config</span>
                 </TabsTrigger>
               </>
             )}
@@ -358,20 +365,39 @@ export default function AdminDashboard() {
             />
           </TabsContent>
 
-          {/* Tickets Tab */}
+          {/* Tickets Tab with Conversation */}
           <TabsContent value="tickets" className="space-y-4">
-            <TicketsTable 
-              tickets={tickets}
-              onUpdateStatus={updateTicketStatus}
-            />
+            <div className="grid gap-4 lg:grid-cols-2">
+              <div className="space-y-4">
+                <TicketsTable 
+                  tickets={tickets}
+                  onUpdateStatus={updateTicketStatus}
+                  onSelectTicket={setSelectedTicket}
+                  selectedTicketId={selectedTicket?.id}
+                />
+              </div>
+              <TicketConversation
+                ticket={selectedTicket}
+                onClose={() => setSelectedTicket(null)}
+                onStatusChange={updateTicketStatus}
+              />
+            </div>
           </TabsContent>
 
           {/* Super Admin Only Tabs */}
           {isSuperAdmin && (
             <>
+              {/* Chats Tab */}
+              <TabsContent value="chats" className="space-y-4">
+                <EnhancedProjectChatViewer
+                  projects={projects}
+                  onSendMessage={sendGlobalMessage}
+                />
+              </TabsContent>
+
               {/* Roles Tab */}
               <TabsContent value="roles" className="space-y-4">
-                <Card className="mb-6 border-amber-500/30 bg-gradient-to-br from-amber-500/5 via-transparent to-transparent">
+                <Card className="mb-6 border-amber-500/30 bg-gradient-to-br from-amber-500/5 via-transparent to-transparent neu-card">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-amber-500">
                       <Sparkles className="w-5 h-5" />
@@ -390,14 +416,6 @@ export default function AdminDashboard() {
                   currentUserId={user?.id || ''}
                   onUpdateRole={updateUserRole}
                   onTogglePremium={togglePremium}
-                />
-              </TabsContent>
-
-              {/* Chats Tab */}
-              <TabsContent value="chats" className="space-y-4">
-                <ProjectChatViewer
-                  projects={projects}
-                  onSendMessage={sendGlobalMessage}
                 />
               </TabsContent>
 
@@ -541,50 +559,10 @@ export default function AdminDashboard() {
 
               {/* Subscriptions Tab */}
               <TabsContent value="subscriptions" className="space-y-4">
-                <Card>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Utilisateur</TableHead>
-                        <TableHead>Plan</TableHead>
-                        <TableHead>Statut</TableHead>
-                        <TableHead>Début</TableHead>
-                        <TableHead>Expiration</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {subscriptions.map((sub) => (
-                        <TableRow key={sub.id}>
-                          <TableCell>{sub.user_email}</TableCell>
-                          <TableCell>
-                            <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white gap-1">
-                              <Crown className="w-3 h-3" />
-                              {sub.plan_name}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={sub.status === 'active' ? 'default' : 'secondary'}>
-                              {sub.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">
-                            {new Date(sub.started_at).toLocaleDateString('fr-FR')}
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">
-                            {sub.expires_at ? new Date(sub.expires_at).toLocaleDateString('fr-FR') : 'Illimité'}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                      {subscriptions.length === 0 && (
-                        <TableRow>
-                          <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                            Aucun abonnement actif
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </Card>
+                <SubscriptionManager 
+                  subscriptions={subscriptions}
+                  onRefresh={refresh}
+                />
               </TabsContent>
 
               {/* Notifications Tab */}

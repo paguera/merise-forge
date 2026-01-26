@@ -8,11 +8,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { useMeriseStore } from '@/hooks/useMeriseStore';
 import { useTheme } from '@/hooks/useTheme';
 import { useAuth } from '@/hooks/useAuth';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
+import { MobileMenu } from '@/components/MobileMenu';
 import { ViewMode, SQLDialect, Entity, Relation, Attribute } from '@/types/merise';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
@@ -487,6 +487,33 @@ export function Header({
   };
   return <TooltipProvider delayDuration={200}>
     <header className="flex items-center justify-between px-3 sm:px-6 py-3 sm:py-4 bg-card/80 backdrop-blur-md border-b border-border/50 sticky top-0 z-50">
+      {/* Mobile Menu */}
+      <MobileMenu
+        user={user}
+        profile={profile}
+        roles={roles}
+        isAdmin={isAdmin}
+        isSuperAdmin={isSuperAdmin}
+        isPremium={isPremium}
+        viewMode={viewMode}
+        theme={theme}
+        connected={realtime.connected}
+        isProjectAdmin={realtime.isAdmin}
+        onSetViewMode={setViewMode}
+        onCycleTheme={cycleTheme}
+        onSignOut={signOut}
+        onOpenCollab={() => setCollabOpen(true)}
+        onOpenHistory={() => setHistoryOpen(true)}
+        onOpenSchemas={() => setSchemasOpen(true)}
+        onOpenSave={() => setSaveOpen(true)}
+        onOpenLoad={() => setLoadOpen(true)}
+        onOpenProfile={() => setProfileOpen(true)}
+        onOpenPremium={() => setPremiumOpen(true)}
+        onImportSQL={() => fileInputRef.current?.click()}
+        onExportZip={handleExportZip}
+        mldModel={mldModel}
+      />
+
       {/* Logo & Branding - Dynamic from settings */}
       <div className="flex items-center gap-2 sm:gap-3">
         {hasLogo() && settings.logo_url ? <img src={settings.logo_url} alt="Logo" className="w-8 h-8 sm:w-10 sm:h-10 object-contain" onError={e => {

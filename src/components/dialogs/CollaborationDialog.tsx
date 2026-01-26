@@ -12,8 +12,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Users, Wifi, WifiOff, Circle, Wand2, Copy, Check, Shield, ChevronRight } from 'lucide-react';
-import { generateProjectCode } from '@/lib/projectCodeGenerator';
+import { Users, Wifi, WifiOff, Circle, Wand2, Copy, Check, Shield, ChevronRight, AlertCircle } from 'lucide-react';
+import { generateProjectCode, validateProjectCode } from '@/lib/projectCodeGenerator';
 import { toast } from 'sonner';
 import { UserStatsModal } from './UserStatsModal';
 import type { PresenceUser } from '@/hooks/useRealtimePresence';
@@ -53,9 +53,19 @@ export function CollaborationDialog({
   const [copied, setCopied] = useState(false);
   const [selectedUser, setSelectedUser] = useState<ProjectUserStat | null>(null);
   const [statsModalOpen, setStatsModalOpen] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   const handleJoin = () => {
     if (!name.trim() || !user.trim()) return;
+    
+    // Validate project code format
+    const validation = validateProjectCode(name.trim());
+    if (!validation.valid) {
+      setValidationError(validation.message || 'Code projet invalide');
+      return;
+    }
+    
+    setValidationError(null);
     onJoin(name.trim(), user.trim());
     onOpenChange(false);
   };
@@ -63,6 +73,7 @@ export function CollaborationDialog({
   const handleGenerateCode = () => {
     const code = generateProjectCode();
     setName(code);
+    setValidationError(null);
     toast.success('Code de projet généré !');
   };
 
@@ -76,6 +87,14 @@ export function CollaborationDialog({
   const handleUserClick = (userStat: ProjectUserStat) => {
     setSelectedUser(userStat);
     setStatsModalOpen(true);
+  };
+
+  // Clear validation error when name changes
+  const handleNameChange = (value: string) => {
+    setName(value);
+    if (validationError) {
+      setValidationError(null);
+    }
   };
 
   const allUsers = connected ? [
@@ -142,10 +161,10 @@ export function CollaborationDialog({
                   <div className="flex gap-2">
                     <Input
                       id="project-name"
-                      placeholder="ex: Ressou.Merize-AlphaCore-XY12"
+                      placeholder="ex: Ressou.Merise-AlphaCore-XY12"
                       value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      className="flex-1"
+                      onChange={(e) => handleNameChange(e.target.value)}
+                      className={`flex-1 ${validationError ? 'border-destructive' : ''}`}
                     />
                     <Button
                       type="button"
@@ -168,9 +187,16 @@ export function CollaborationDialog({
                       </Button>
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Cliquez sur la baguette pour générer un code unique ou entrez un nom personnalisé
-                  </p>
+                  {validationError ? (
+                    <p className="text-xs text-destructive flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" />
+                      {validationError}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      Cliquez sur la baguette pour générer un code unique (format: Ressou.Merise-...)
+                    </p>
+                  )}
                 </div>
               </div>
             ) : (

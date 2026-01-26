@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import AuthPage from "./pages/AuthPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import SupportPage from "./pages/SupportPage";
+import MyProjects from "./pages/MyProjects";
 import NotFound from "./pages/NotFound";
 import { WelcomeSplash } from "./components/WelcomeSplash";
 import { UserNotifications } from "./components/UserNotifications";
@@ -39,6 +40,7 @@ const App = () => {
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/support" element={<SupportPage />} />
+            <Route path="/my-projects" element={<MyProjects />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

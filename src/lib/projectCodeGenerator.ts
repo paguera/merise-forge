@@ -1,4 +1,4 @@
-// Génération de codes de projet avec préfixe Ressou.Merize
+// Génération de codes de projet avec préfixe Ressou.Merise
 const ADJECTIVES = [
   'Alpha', 'Beta', 'Delta', 'Gamma', 'Omega', 'Sigma', 'Zeta', 'Nova',
   'Stellar', 'Cosmic', 'Quantum', 'Prism', 'Nexus', 'Apex', 'Prime', 'Core',
@@ -24,9 +24,26 @@ export function generateProjectCode(): string {
   const noun = NOUNS[Math.floor(Math.random() * NOUNS.length)];
   const suffix = generateRandomSuffix();
   
-  return `Ressou.Merize-${adjective}${noun}-${suffix}`;
+  return `Ressou.Merise-${adjective}${noun}-${suffix}`;
 }
 
-export function isRessouMerizeCode(code: string): boolean {
-  return code.startsWith('Ressou.Merize-');
+export function isRessouMeriseCode(code: string): boolean {
+  return code.startsWith('Ressou.Merise-');
+}
+
+// Validate that a project code follows the required format
+export function validateProjectCode(code: string): { valid: boolean; message?: string } {
+  if (!code.trim()) {
+    return { valid: false, message: 'Le code projet est requis' };
+  }
+  
+  if (!code.startsWith('Ressou.Merise-')) {
+    return { valid: false, message: 'Le code doit commencer par "Ressou.Merise-"' };
+  }
+  
+  if (code.length < 20) {
+    return { valid: false, message: 'Le code projet est trop court' };
+  }
+  
+  return { valid: true };
 }

@@ -144,7 +144,7 @@ export function PremiumDialog({ open, onOpenChange, onSuccess, userId }: Premium
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto bg-background text-foreground">
         <DialogHeader className="text-center pb-2">
           {/* Premium Icon */}
           <div className="relative mx-auto mb-4">
@@ -158,7 +158,7 @@ export function PremiumDialog({ open, onOpenChange, onSuccess, userId }: Premium
           <DialogTitle className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 bg-clip-text text-transparent">
             Passez à Premium
           </DialogTitle>
-          <DialogDescription className="text-base">
+          <DialogDescription className="text-base text-muted-foreground">
             Débloquez tout le potentiel de Ressou Merise
           </DialogDescription>
         </DialogHeader>
@@ -170,7 +170,9 @@ export function PremiumDialog({ open, onOpenChange, onSuccess, userId }: Premium
               key={idx} 
               className={cn(
                 "neu-card border-2 transition-all hover:scale-[1.02]",
-                feature.highlight && "border-amber-500/50 bg-gradient-to-br from-amber-50/50 to-orange-50/50 dark:from-amber-950/20 dark:to-orange-950/20"
+                feature.highlight 
+                  ? "border-amber-500/50 bg-amber-500/5" 
+                  : "border-border"
               )}
             >
               <CardContent className="p-3 flex items-start gap-3">
@@ -208,7 +210,7 @@ export function PremiumDialog({ open, onOpenChange, onSuccess, userId }: Premium
           </Card>
           
           {/* Annual */}
-          <Card className="neu-card border-2 border-amber-500 bg-gradient-to-br from-amber-50/50 to-orange-50/50 dark:from-amber-950/20 dark:to-orange-950/20 cursor-pointer relative overflow-hidden">
+          <Card className="neu-card border-2 border-amber-500 bg-amber-500/5 cursor-pointer relative overflow-hidden">
             <Badge className="absolute -top-1 -right-1 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-[10px] px-2 py-0.5">
               -17%
             </Badge>

@@ -61,6 +61,7 @@ export function Header({
   const {
     settings,
     hasLogo,
+    getLogoSize,
     hasSiteName
   } = useSiteSettings();
   const [saveOpen, setSaveOpen] = useState(false);
@@ -516,12 +517,24 @@ export function Header({
 
       {/* Logo & Branding - Dynamic from settings */}
       <div className="flex items-center gap-2 sm:gap-3">
-        {hasLogo() && settings.logo_url ? <img src={settings.logo_url} alt="Logo" className="w-8 h-8 sm:w-10 sm:h-10 object-contain" onError={e => {
-          (e.target as HTMLImageElement).style.display = 'none';
-        }} /> : hasLogo() ? null : <ThemeLogo size={36} className="hidden sm:block" />}
-        {hasSiteName() && settings.site_name && <h1 className="text-base sm:text-xl font-bold bg-gradient-to-r from-primary via-blue-400 to-primary bg-clip-text text-transparent hidden xs:block">
+        {hasLogo() && settings.logo_url ? (
+          <img 
+            src={settings.logo_url} 
+            alt="Logo" 
+            style={{ height: `${getLogoSize()}px` }}
+            className="object-contain" 
+            onError={e => {
+              (e.target as HTMLImageElement).style.display = 'none';
+            }} 
+          />
+        ) : !hasLogo() ? (
+          <ThemeLogo size={36} className="hidden sm:block" />
+        ) : null}
+        {hasSiteName() && settings.site_name && (
+          <h1 className="text-base sm:text-xl font-bold bg-gradient-to-r from-primary via-blue-400 to-primary bg-clip-text text-transparent hidden xs:block">
             {settings.site_name}
-          </h1>}
+          </h1>
+        )}
       </div>
 
       {/* Desktop Tabs */}
@@ -575,6 +588,10 @@ export function Header({
               <DropdownMenuItem onClick={() => setProfileOpen(true)} className="cursor-pointer">
                 <User className="w-4 h-4 mr-2" />
                 Mon Profil
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/my-projects')} className="cursor-pointer">
+                <FolderOpen className="w-4 h-4 mr-2" />
+                Mes Projets
               </DropdownMenuItem>
               {isPremium ? <DropdownMenuItem className="text-amber-500 cursor-default">
                   <Crown className="w-4 h-4 mr-2" />

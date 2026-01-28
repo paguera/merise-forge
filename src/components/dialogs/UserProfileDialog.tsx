@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { User, Mail, Camera, Crown, Calendar, Shield, Upload, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { UserBadges, getUserBadges } from '@/components/badges/UserBadges';
 import type { UserProfile, UserRole } from '@/hooks/useAuth';
 
 interface UserProfileDialogProps {
@@ -195,6 +196,21 @@ export function UserProfileDialog({
                 Passer Premium
               </Badge>
             )}
+          </div>
+
+          {/* User Badges Section */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Badges & Récompenses</Label>
+            <UserBadges 
+              badges={getUserBadges({
+                isSuperAdmin: highestRole === 'super_admin',
+                isAdmin: highestRole === 'admin',
+                isPremium: !!isPremium,
+                modificationCount: 25,
+                createdAt: profile?.created_at
+              })}
+              maxVisible={5}
+            />
           </div>
 
           {/* Form fields */}

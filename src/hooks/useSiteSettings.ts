@@ -9,6 +9,7 @@ export interface SiteSetting {
 export function useSiteSettings() {
   const [settings, setSettings] = useState<Record<string, string | null>>({
     logo_url: null,
+    logo_size: '48',
     site_name: 'Ressou Merise',
     announcement_text: null,
     announcement_active: 'false',
@@ -48,6 +49,10 @@ export function useSiteSettings() {
     return !!logoUrl && logoUrl.trim() !== '';
   };
 
+  const getLogoSize = (): number => {
+    return parseInt(settings.logo_size || '48', 10);
+  };
+
   const hasSiteName = (): boolean => {
     const siteName = settings.site_name;
     return !!siteName && siteName.trim() !== '';
@@ -62,6 +67,7 @@ export function useSiteSettings() {
     loading,
     getSetting,
     hasLogo,
+    getLogoSize,
     hasSiteName,
     isAnnouncementActive,
     refresh: fetchSettings,

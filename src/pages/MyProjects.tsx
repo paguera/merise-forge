@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +7,15 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import { 
   FolderOpen, 
   Plus, 
@@ -21,8 +29,10 @@ import {
   Shield,
   Calendar,
   Edit3,
-  Filter,
-  ArrowLeft
+  ArrowLeft,
+  Globe,
+  Lock,
+  Loader2
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -40,6 +50,7 @@ interface Project {
   created_at: string;
   updated_at: string;
   isCreator: boolean;
+  is_public?: boolean;
 }
 
 interface LocalProject {
@@ -59,6 +70,13 @@ export default function MyProjects() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<'all' | 'created' | 'collaborating' | 'local'>('all');
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  
+  // Dialogs state
+  const [renameDialogOpen, setRenameDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [newName, setNewName] = useState('');
+  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -168,6 +186,72 @@ export default function MyProjects() {
     localStorage.removeItem(`merise-project-${name}`);
     loadLocalProjects();
     toast.success(`Projet "${name}" supprimé`);
+  };
+
+  const handleRenameProject = async () => {
+    if (!selectedProject || !newName.trim()) return;
+    
+    setActionLoading(true);
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .update({ name: newName.trim() })
+        .eq('id', selectedProject.id);
+
+      if (error) throw error;
+
+      setCloudProjects(prev => 
+        prev.map(p => p.id === selectedProject.id ? { ...p, name: newName.trim() } : p)
+      );
+      toast.success('Projet renommé avec succès');
+      setRenameDialogOpen(false);
+      setSelectedProject(null);
+      setNewName('');
+    } catch (error) {
+      console.error('Error renaming project:', error);
+      toast.error('Erreur lors du renommage');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDeleteCloudProject = async () => {
+    if (!selectedProject) return;
+    
+    setActionLoading(true);
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .delete()
+        .eq('id', selectedProject.id);
+
+      if (error) throw error;
+
+      setCloudProjects(prev => prev.filter(p => p.id !== selectedProject.id));
+      toast.success('Projet supprimé avec succès');
+      setDeleteDialogOpen(false);
+      setSelectedProject(null);
+    } catch (error) {
+      console.error('Error deleting project:', error);
+      toast.error('Erreur lors de la suppression');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleToggleVisibility = async (project: Project) => {
+    if (!project.isCreator) {
+      toast.error('Seul le créateur peut modifier la visibilité');
+      return;
+    }
+
+    try {
+      // For now we track visibility locally since we need to add column to DB
+      // This would need a migration to add is_public column
+      toast.info('Fonctionnalité de visibilité à venir');
+    } catch (error) {
+      console.error('Error toggling visibility:', error);
+    }
   };
 
   const filteredCloudProjects = cloudProjects.filter(p => {
@@ -375,6 +459,33 @@ export default function MyProjects() {
                               )}
                             </div>
                             <div className="flex gap-2">
+                              {project.isCreator && (
+                                <>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => {
+                                      setSelectedProject(project);
+                                      setNewName(project.name);
+                                      setRenameDialogOpen(true);
+                                    }}
+                                    className="shrink-0"
+                                  >
+                                    <Edit3 className="w-3 h-3" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => {
+                                      setSelectedProject(project);
+                                      setDeleteDialogOpen(true);
+                                    }}
+                                    className="shrink-0 text-destructive hover:text-destructive"
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                  </Button>
+                                </>
+                              )}
                               <Button
                                 size="sm"
                                 onClick={() => handleJoinProject(project.name)}
@@ -481,6 +592,76 @@ export default function MyProjects() {
           </div>
         </ScrollArea>
       </div>
+      
+      {/* Rename Dialog */}
+      <Dialog open={renameDialogOpen} onOpenChange={setRenameDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit3 className="w-5 h-5" />
+              Renommer le projet
+            </DialogTitle>
+            <DialogDescription>
+              Entrez un nouveau nom pour votre projet
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-name">Nouveau nom</Label>
+              <Input
+                id="new-name"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                placeholder="Mon projet Merise"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRenameDialogOpen(false)}>
+              Annuler
+            </Button>
+            <Button 
+              onClick={handleRenameProject}
+              disabled={actionLoading || !newName.trim()}
+            >
+              {actionLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              ) : null}
+              Renommer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <Trash2 className="w-5 h-5" />
+              Supprimer le projet
+            </DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir supprimer "{selectedProject?.name}" ? Cette action est irréversible.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              Annuler
+            </Button>
+            <Button 
+              variant="destructive"
+              onClick={handleDeleteCloudProject}
+              disabled={actionLoading}
+            >
+              {actionLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              ) : null}
+              Supprimer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       
       <Footer />
     </div>

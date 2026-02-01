@@ -14,10 +14,12 @@ interface MeriseStore {
   selectedRelationId: string | null;
   generatedSQL: string;
   isExporting: boolean;
+  isReadOnly: boolean;
 
   // Actions
   setViewMode: (mode: ViewMode) => void;
   setSqlDialect: (dialect: SQLDialect) => void;
+  setReadOnly: (readOnly: boolean) => void;
   
   // Entity actions
   addEntity: (entity: Entity) => void;
@@ -68,6 +70,7 @@ export const useMeriseStore = create<MeriseStore>()(
       selectedRelationId: null,
       generatedSQL: '',
       isExporting: false,
+      isReadOnly: false,
 
   setViewMode: (mode) => {
     if (mode === 'MLD' || mode === 'MPD') {
@@ -78,119 +81,153 @@ export const useMeriseStore = create<MeriseStore>()(
     }
     set({ viewMode: mode });
   },
+
+  setReadOnly: (readOnly) => set({ isReadOnly: readOnly }),
   
   setSqlDialect: (dialect) => {
     set({ sqlDialect: dialect });
     get().generateSQLCode();
   },
 
-  addEntity: (entity) => set((state) => ({
-    model: {
-      ...state.model,
-      entities: [...state.model.entities, entity],
-    },
-  })),
+  addEntity: (entity) => {
+    if (get().isReadOnly) return;
+    set((state) => ({
+      model: {
+        ...state.model,
+        entities: [...state.model.entities, entity],
+      },
+    }));
+  },
 
-  updateEntity: (id, updates) => set((state) => ({
-    model: {
-      ...state.model,
-      entities: state.model.entities.map((e) =>
-        e.id === id ? { ...e, ...updates } : e
-      ),
-    },
-  })),
+  updateEntity: (id, updates) => {
+    if (get().isReadOnly) return;
+    set((state) => ({
+      model: {
+        ...state.model,
+        entities: state.model.entities.map((e) =>
+          e.id === id ? { ...e, ...updates } : e
+        ),
+      },
+    }));
+  },
 
-  removeEntity: (id) => set((state) => ({
-    model: {
-      ...state.model,
-      entities: state.model.entities.filter((e) => e.id !== id),
-      relations: state.model.relations.filter(
-        (r) => r.entity1Id !== id && r.entity2Id !== id
-      ),
-    },
-    selectedEntityId: state.selectedEntityId === id ? null : state.selectedEntityId,
-  })),
+  removeEntity: (id) => {
+    if (get().isReadOnly) return;
+    set((state) => ({
+      model: {
+        ...state.model,
+        entities: state.model.entities.filter((e) => e.id !== id),
+        relations: state.model.relations.filter(
+          (r) => r.entity1Id !== id && r.entity2Id !== id
+        ),
+      },
+      selectedEntityId: state.selectedEntityId === id ? null : state.selectedEntityId,
+    }));
+  },
 
-  addAttribute: (entityId, attribute) => set((state) => ({
-    model: {
-      ...state.model,
-      entities: state.model.entities.map((e) =>
-        e.id === entityId
-          ? { ...e, attributes: [...e.attributes, attribute] }
-          : e
-      ),
-    },
-  })),
+  addAttribute: (entityId, attribute) => {
+    if (get().isReadOnly) return;
+    set((state) => ({
+      model: {
+        ...state.model,
+        entities: state.model.entities.map((e) =>
+          e.id === entityId
+            ? { ...e, attributes: [...e.attributes, attribute] }
+            : e
+        ),
+      },
+    }));
+  },
 
-  updateAttribute: (entityId, attributeId, updates) => set((state) => ({
-    model: {
-      ...state.model,
-      entities: state.model.entities.map((e) =>
-        e.id === entityId
-          ? {
-              ...e,
-              attributes: e.attributes.map((a) =>
-                a.id === attributeId ? { ...a, ...updates } : a
-              ),
-            }
-          : e
-      ),
-    },
-  })),
+  updateAttribute: (entityId, attributeId, updates) => {
+    if (get().isReadOnly) return;
+    set((state) => ({
+      model: {
+        ...state.model,
+        entities: state.model.entities.map((e) =>
+          e.id === entityId
+            ? {
+                ...e,
+                attributes: e.attributes.map((a) =>
+                  a.id === attributeId ? { ...a, ...updates } : a
+                ),
+              }
+            : e
+        ),
+      },
+    }));
+  },
 
-  removeAttribute: (entityId, attributeId) => set((state) => ({
-    model: {
-      ...state.model,
-      entities: state.model.entities.map((e) =>
-        e.id === entityId
-          ? { ...e, attributes: e.attributes.filter((a) => a.id !== attributeId) }
-          : e
-      ),
-    },
-  })),
+  removeAttribute: (entityId, attributeId) => {
+    if (get().isReadOnly) return;
+    set((state) => ({
+      model: {
+        ...state.model,
+        entities: state.model.entities.map((e) =>
+          e.id === entityId
+            ? { ...e, attributes: e.attributes.filter((a) => a.id !== attributeId) }
+            : e
+        ),
+      },
+    }));
+  },
 
-  reorderAttributes: (entityId, fromIndex, toIndex) => set((state) => ({
-    model: {
-      ...state.model,
-      entities: state.model.entities.map((e) => {
-        if (e.id !== entityId) return e;
-        const newAttributes = [...e.attributes];
-        const [movedItem] = newAttributes.splice(fromIndex, 1);
-        newAttributes.splice(toIndex, 0, movedItem);
-        return { ...e, attributes: newAttributes };
-      }),
-    },
-  })),
+  reorderAttributes: (entityId, fromIndex, toIndex) => {
+    if (get().isReadOnly) return;
+    set((state) => ({
+      model: {
+        ...state.model,
+        entities: state.model.entities.map((e) => {
+          if (e.id !== entityId) return e;
+          const newAttributes = [...e.attributes];
+          const [movedItem] = newAttributes.splice(fromIndex, 1);
+          newAttributes.splice(toIndex, 0, movedItem);
+          return { ...e, attributes: newAttributes };
+        }),
+      },
+    }));
+  },
 
-  addRelation: (relation) => set((state) => ({
-    model: {
-      ...state.model,
-      relations: [...state.model.relations, relation],
-    },
-  })),
+  addRelation: (relation) => {
+    if (get().isReadOnly) return;
+    set((state) => ({
+      model: {
+        ...state.model,
+        relations: [...state.model.relations, relation],
+      },
+    }));
+  },
 
-  updateRelation: (id, updates) => set((state) => ({
-    model: {
-      ...state.model,
-      relations: state.model.relations.map((r) =>
-        r.id === id ? { ...r, ...updates } : r
-      ),
-    },
-  })),
+  updateRelation: (id, updates) => {
+    if (get().isReadOnly) return;
+    set((state) => ({
+      model: {
+        ...state.model,
+        relations: state.model.relations.map((r) =>
+          r.id === id ? { ...r, ...updates } : r
+        ),
+      },
+    }));
+  },
 
-  removeRelation: (id) => set((state) => ({
-    model: {
-      ...state.model,
-      relations: state.model.relations.filter((r) => r.id !== id),
-    },
-    selectedRelationId: state.selectedRelationId === id ? null : state.selectedRelationId,
-  })),
+  removeRelation: (id) => {
+    if (get().isReadOnly) return;
+    set((state) => ({
+      model: {
+        ...state.model,
+        relations: state.model.relations.filter((r) => r.id !== id),
+      },
+      selectedRelationId: state.selectedRelationId === id ? null : state.selectedRelationId,
+    }));
+  },
 
   selectEntity: (id) => set({ selectedEntityId: id, selectedRelationId: null }),
   selectRelation: (id) => set({ selectedRelationId: id, selectedEntityId: null }),
 
   // Table actions
-  addTable: (table) => set((state) => {
+  addTable: (table) => {
+    if (get().isReadOnly) return;
+    set((state) => {
     if (!state.mldModel) {
       const newMldModel = { tables: [table], relations: [] };
       const sql = generateSQL(newMldModel, state.sqlDialect);
@@ -204,9 +241,12 @@ export const useMeriseStore = create<MeriseStore>()(
     
     const sql = generateSQL(updatedMldModel, state.sqlDialect);
     return { mldModel: updatedMldModel, generatedSQL: sql };
-  }),
+    });
+  },
 
-  removeTable: (tableId) => set((state) => {
+  removeTable: (tableId) => {
+    if (get().isReadOnly) return;
+    set((state) => {
     if (!state.mldModel) return state;
     
     const updatedMldModel = {
@@ -219,9 +259,12 @@ export const useMeriseStore = create<MeriseStore>()(
     
     const sql = generateSQL(updatedMldModel, state.sqlDialect);
     return { mldModel: updatedMldModel, generatedSQL: sql };
-  }),
+    });
+  },
 
-  updateTable: (tableId, updates) => set((state) => {
+  updateTable: (tableId, updates) => {
+    if (get().isReadOnly) return;
+    set((state) => {
     if (!state.mldModel) return state;
     
     const updatedMldModel = {
@@ -233,9 +276,12 @@ export const useMeriseStore = create<MeriseStore>()(
     
     const sql = generateSQL(updatedMldModel, state.sqlDialect);
     return { mldModel: updatedMldModel, generatedSQL: sql };
-  }),
+    });
+  },
 
-  addColumnToTable: (tableId, column) => set((state) => {
+  addColumnToTable: (tableId, column) => {
+    if (get().isReadOnly) return;
+    set((state) => {
     if (!state.mldModel) return state;
     
     const updatedMldModel = {
@@ -249,9 +295,12 @@ export const useMeriseStore = create<MeriseStore>()(
     
     const sql = generateSQL(updatedMldModel, state.sqlDialect);
     return { mldModel: updatedMldModel, generatedSQL: sql };
-  }),
+    });
+  },
 
-  updateColumnInTable: (tableId, columnId, updates) => set((state) => {
+  updateColumnInTable: (tableId, columnId, updates) => {
+    if (get().isReadOnly) return;
+    set((state) => {
     if (!state.mldModel) return state;
     
     const updatedMldModel = {
@@ -270,9 +319,12 @@ export const useMeriseStore = create<MeriseStore>()(
     
     const sql = generateSQL(updatedMldModel, state.sqlDialect);
     return { mldModel: updatedMldModel, generatedSQL: sql };
-  }),
+    });
+  },
 
-  removeColumnFromTable: (tableId, columnId) => set((state) => {
+  removeColumnFromTable: (tableId, columnId) => {
+    if (get().isReadOnly) return;
+    set((state) => {
     if (!state.mldModel) return state;
     
     const updatedMldModel = {
@@ -286,9 +338,12 @@ export const useMeriseStore = create<MeriseStore>()(
     
     const sql = generateSQL(updatedMldModel, state.sqlDialect);
     return { mldModel: updatedMldModel, generatedSQL: sql };
-  }),
+    });
+  },
 
-  updateTablePosition: (tableId, position) => set((state) => {
+  updateTablePosition: (tableId, position) => {
+    if (get().isReadOnly) return;
+    set((state) => {
     if (!state.mldModel) return state;
     
     return {
@@ -299,7 +354,8 @@ export const useMeriseStore = create<MeriseStore>()(
         ),
       },
     };
-  }),
+    });
+  },
 
   transformToMLD: () => {
     const { model, mldModel: existingMldModel } = get();

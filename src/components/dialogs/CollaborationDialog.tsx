@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Users, Wifi, WifiOff, Circle, Wand2, Copy, Check, Shield, ChevronRight, AlertCircle } from 'lucide-react';
+import { Users, Wifi, WifiOff, Circle, Wand2, Copy, Check, Shield, ChevronRight, AlertCircle, Crown } from 'lucide-react';
 import { generateProjectCode, validateProjectCode } from '@/lib/projectCodeGenerator';
 import { toast } from 'sonner';
 import { UserStatsModal } from './UserStatsModal';
@@ -32,6 +32,9 @@ interface Props {
   myColor: string;
   creatorId: string | null;
   userStats: ProjectUserStat[];
+  isPremium?: boolean;
+  onOpenPremium?: () => void;
+  isAuthenticated?: boolean;
 }
 
 export function CollaborationDialog({
@@ -47,6 +50,9 @@ export function CollaborationDialog({
   myColor,
   creatorId,
   userStats,
+  isPremium = false,
+  onOpenPremium,
+  isAuthenticated = false,
 }: Props) {
   const [name, setName] = useState('');
   const [user, setUser] = useState('');
@@ -71,6 +77,16 @@ export function CollaborationDialog({
   };
 
   const handleGenerateCode = () => {
+    // Only premium users can generate (create) new project codes
+    if (!isPremium) {
+      if (onOpenPremium) {
+        onOpenPremium();
+        onOpenChange(false);
+      }
+      toast.error('La création de projet est réservée aux utilisateurs Premium');
+      return;
+    }
+    
     const code = generateProjectCode();
     setName(code);
     setValidationError(null);
@@ -146,6 +162,27 @@ export function CollaborationDialog({
           <div className="flex-1 overflow-hidden">
             {!connected ? (
               <div className="space-y-4 py-4">
+                {/* Authentication required notice */}
+                {!isAuthenticated && (
+                  <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400 text-sm flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>Vous devez être connecté pour créer ou rejoindre un projet.</span>
+                  </div>
+                )}
+
+                {/* Premium required for project creation */}
+                {isAuthenticated && !isPremium && (
+                  <div className="p-3 rounded-lg bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/30 text-sm">
+                    <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
+                      <Crown className="w-4 h-4 shrink-0" />
+                      <span className="font-medium">La création de projet est réservée aux Premium</span>
+                    </div>
+                    <p className="text-muted-foreground mt-1 text-xs">
+                      Vous pouvez rejoindre un projet existant avec son code.
+                    </p>
+                  </div>
+                )}
+
                 <div className="space-y-2">
                   <Label htmlFor="username">Votre nom d'utilisateur</Label>
                   <Input
@@ -154,6 +191,7 @@ export function CollaborationDialog({
                     value={user}
                     onChange={(e) => setUser(e.target.value)}
                     className="border-primary/30 focus:border-primary"
+                    disabled={!isAuthenticated}
                   />
                 </div>
                 <div className="space-y-2">
@@ -165,15 +203,18 @@ export function CollaborationDialog({
                       value={name}
                       onChange={(e) => handleNameChange(e.target.value)}
                       className={`flex-1 ${validationError ? 'border-destructive' : ''}`}
+                      disabled={!isAuthenticated}
                     />
                     <Button
                       type="button"
                       variant="outline"
                       size="icon"
                       onClick={handleGenerateCode}
-                      title="Générer un code"
+                      title={isPremium ? "Générer un code" : "Premium requis pour créer"}
+                      disabled={!isAuthenticated || !isPremium}
+                      className={!isPremium ? 'opacity-50' : ''}
                     >
-                      <Wand2 className="w-4 h-4" />
+                      {isPremium ? <Wand2 className="w-4 h-4" /> : <Crown className="w-4 h-4 text-amber-500" />}
                     </Button>
                     {name && (
                       <Button
@@ -194,7 +235,9 @@ export function CollaborationDialog({
                     </p>
                   ) : (
                     <p className="text-xs text-muted-foreground">
-                      Cliquez sur la baguette pour générer un code unique (format: Ressou.Merise-...)
+                      {isPremium 
+                        ? "Cliquez sur la baguette pour générer un code unique (format: Ressou.Merise-...)"
+                        : "Entrez un code existant pour rejoindre un projet"}
                     </p>
                   )}
                 </div>
@@ -325,11 +368,11 @@ export function CollaborationDialog({
             {!connected ? (
               <Button 
                 onClick={handleJoin} 
-                disabled={!name.trim() || !user.trim()}
+                disabled={!name.trim() || !user.trim() || !isAuthenticated}
                 className="w-full sm:w-auto"
               >
                 <Users className="w-4 h-4 mr-2" />
-                Rejoindre / Créer
+                Rejoindre
               </Button>
             ) : (
               <>

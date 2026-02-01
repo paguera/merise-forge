@@ -515,9 +515,9 @@ export function Header({
         mldModel={mldModel}
       />
 
-      {/* Logo & Branding - Dynamic from settings */}
+      {/* Logo & Branding - Dynamic from settings (NO default logo if field is empty) */}
       <div className="flex items-center gap-2 sm:gap-3">
-        {hasLogo() && settings.logo_url ? (
+        {hasLogo() && settings.logo_url && (
           <img 
             src={settings.logo_url} 
             alt="Logo" 
@@ -527,9 +527,7 @@ export function Header({
               (e.target as HTMLImageElement).style.display = 'none';
             }} 
           />
-        ) : !hasLogo() ? (
-          <ThemeLogo size={36} className="hidden sm:block" />
-        ) : null}
+        )}
         {hasSiteName() && settings.site_name && (
           <h1 className="text-base sm:text-xl font-bold bg-gradient-to-r from-primary via-blue-400 to-primary bg-clip-text text-transparent hidden xs:block">
             {settings.site_name}
@@ -742,7 +740,7 @@ export function Header({
 
       <SaveProjectDialog open={saveOpen} onOpenChange={setSaveOpen} onSave={handleSaveProject} />
       <LoadProjectDialog open={loadOpen} onOpenChange={setLoadOpen} projects={getSavedProjects()} onLoad={handleLoadProject} onDelete={handleDeleteProject} />
-      <CollaborationDialog open={collabOpen} onOpenChange={setCollabOpen} onJoin={realtime.joinProject} connected={realtime.connected} projectName={realtime.projectName} username={realtime.username} onLeave={realtime.leaveProject} onPush={realtime.pushState} users={realtime.users} myColor={realtime.myColor} creatorId={realtime.creatorId} userStats={realtime.userStats.stats} />
+      <CollaborationDialog open={collabOpen} onOpenChange={setCollabOpen} onJoin={realtime.joinProject} connected={realtime.connected} projectName={realtime.projectName} username={realtime.username} onLeave={realtime.leaveProject} onPush={realtime.pushState} users={realtime.users} myColor={realtime.myColor} creatorId={realtime.creatorId} userStats={realtime.userStats.stats} isPremium={!!isPremium} onOpenPremium={() => setPremiumOpen(true)} isAuthenticated={!!user} />
       <SyncHistoryDialog open={historyOpen} onOpenChange={setHistoryOpen} history={realtime.syncHistory.history} pendingCount={realtime.syncHistory.pendingCount} isAdmin={realtime.isAdmin} currentUsername={realtime.username} onApprove={id => realtime.syncHistory.approveEntry(id, realtime.username)} onReject={id => realtime.syncHistory.rejectEntry(id, realtime.username)} onAddComment={(id, comment) => realtime.syncHistory.addComment(id, comment)} />
       <SchemasDialog open={schemasOpen} onOpenChange={setSchemasOpen} schemas={realtime.projectSchemas.schemas} currentSchemaId={realtime.projectSchemas.currentSchemaId} onCreateSchema={realtime.projectSchemas.createSchema} onLoadSchema={realtime.projectSchemas.loadSchema} onUpdateSchema={realtime.projectSchemas.updateCurrentSchema} onDeleteSchema={realtime.projectSchemas.deleteSchema} onRenameSchema={realtime.projectSchemas.renameSchema} />
       <PremiumDialog open={premiumOpen} onOpenChange={setPremiumOpen} userId={user?.id} onSuccess={refreshProfile} />

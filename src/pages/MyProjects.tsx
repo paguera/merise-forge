@@ -95,31 +95,36 @@ export default function MyProjects() {
     
     setLoading(true);
     try {
-      // Fetch projects where user is creator OR has participated
+      // Get user identifier (use both email and id for matching)
+      const userIdentifiers = [user.email, user.id].filter(Boolean);
+      
+      // Fetch projects where user is the creator (check both email and id)
       const { data: createdProjects, error: createdError } = await supabase
         .from('projects')
         .select('*')
-        .eq('creator_id', user.email || user.id);
+        .or(userIdentifiers.map(id => `creator_id.eq.${id}`).join(','));
 
       if (createdError) throw createdError;
 
-      // Fetch projects where user has stats (participated)
+      // Fetch projects where user has stats (participated) - check with email
       const { data: participatedStats, error: statsError } = await supabase
         .from('project_user_stats')
         .select('project_id')
-        .eq('username', user.email || user.id);
+        .or(userIdentifiers.map(id => `username.eq.${id}`).join(','));
 
       if (statsError) throw statsError;
 
-      const participatedIds = participatedStats?.map(s => s.project_id) || [];
+      const createdProjectIds = new Set((createdProjects || []).map(p => p.id));
+      const participatedIds = (participatedStats || [])
+        .map(s => s.project_id)
+        .filter(id => !createdProjectIds.has(id));
       
       let participatedProjects: Project[] = [];
       if (participatedIds.length > 0) {
         const { data: collabProjects, error: collabError } = await supabase
           .from('projects')
           .select('*')
-          .in('id', participatedIds)
-          .neq('creator_id', user.email || user.id);
+          .in('id', participatedIds);
 
         if (!collabError && collabProjects) {
           participatedProjects = collabProjects.map(p => ({
@@ -133,6 +138,9 @@ export default function MyProjects() {
         ...(createdProjects || []).map(p => ({ ...p, isCreator: true })),
         ...participatedProjects
       ];
+
+      // Sort by updated_at descending
+      allProjects.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
 
       setCloudProjects(allProjects);
     } catch (error) {

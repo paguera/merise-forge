@@ -178,23 +178,11 @@ function getCardinalityPosition(
   const dy = endY - startY;
   const len = Math.sqrt(dx * dx + dy * dy) || 1;
   
-  // Normalized direction
-  const nx = dx / len;
-  const ny = dy / len;
-  
-  // Position 45px along the line from start
-  const distanceAlongLine = 45;
-  const posX = startX + nx * distanceAlongLine;
-  const posY = startY + ny * distanceAlongLine;
-  
-  // Perpendicular offset
-  const perpOffset = 22;
-  const perpX = -ny * perpOffset;
-  const perpY = nx * perpOffset;
-  
+  // Position 30px along the line from the edge point (outside the table)
+  const dist = 30;
   return {
-    x: posX + perpX,
-    y: posY + perpY
+    x: startX + (dx / len) * dist,
+    y: startY + (dy / len) * dist,
   };
 }
 

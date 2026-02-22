@@ -13,6 +13,7 @@ import { PremiumDialog } from '@/components/dialogs/PremiumDialog';
 import { useMeriseStore } from '@/hooks/useMeriseStore';
 import { useRealtimeProject } from '@/hooks/useRealtimeProject';
 import { useAuth } from '@/hooks/useAuth';
+import { useCanvasZoom } from '@/hooks/useCanvasZoom';
 
 const Index = () => {
   const { viewMode, isReadOnly } = useMeriseStore();
@@ -20,24 +21,31 @@ const Index = () => {
   const { user, isPremium, refreshProfile } = useAuth();
   const { users, updateCursor, connected, projectId, username, myColor } = realtime;
   const [premiumOpen, setPremiumOpen] = useState(false);
+  const zoom = useCanvasZoom();
 
   const handleCursorMove = connected ? updateCursor : undefined;
+
+  const zoomControlProps = {
+    scale: zoom.scale,
+    onZoomIn: zoom.zoomIn,
+    onZoomOut: zoom.zoomOut,
+    onReset: zoom.resetZoom,
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-background overflow-hidden">
       <Header realtime={realtime} />
       
       <div className="flex-1 flex overflow-hidden">
-        {viewMode === 'MCD' && <MCDSidebar />}
-        {viewMode === 'MLD' && <MLDSidebar />}
-        {viewMode === 'MPD' && <MPDSidebar />}
+        {viewMode === 'MCD' && <MCDSidebar zoomControls={zoomControlProps} />}
+        {viewMode === 'MLD' && <MLDSidebar zoomControls={zoomControlProps} />}
+        {viewMode === 'MPD' && <MPDSidebar zoomControls={zoomControlProps} />}
         
         <div className="relative flex-1">
-          {viewMode === 'MCD' && <MCDCanvas users={users} onCursorMove={handleCursorMove} />}
-          {viewMode === 'MLD' && <MLDCanvas users={users} onCursorMove={handleCursorMove} />}
-          {viewMode === 'MPD' && <MPDCanvas users={users} onCursorMove={handleCursorMove} />}
+          {viewMode === 'MCD' && <MCDCanvas users={users} onCursorMove={handleCursorMove} zoom={zoom} />}
+          {viewMode === 'MLD' && <MLDCanvas users={users} onCursorMove={handleCursorMove} zoom={zoom} />}
+          {viewMode === 'MPD' && <MPDCanvas users={users} onCursorMove={handleCursorMove} zoom={zoom} />}
           
-          {/* Protection overlay for non-premium users */}
           <CanvasProtectionOverlay 
             isPremium={!!isPremium} 
             onUpgrade={() => setPremiumOpen(true)} 

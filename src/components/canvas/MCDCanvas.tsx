@@ -3,20 +3,27 @@ import { useMeriseStore } from '@/hooks/useMeriseStore';
 import { EntityNode } from './EntityNode';
 import { RelationNode } from './RelationNode';
 import { ConnectionLine } from './ConnectionLine';
-import { ZoomControls } from './ZoomControls';
 import { CollaboratorCursors } from './CollaboratorCursors';
-import { useCanvasZoom } from '@/hooks/useCanvasZoom';
 import type { PresenceUser } from '@/hooks/useRealtimePresence';
 
 interface Props {
   users?: PresenceUser[];
   onCursorMove?: (x: number, y: number) => void;
+  zoom: {
+    scale: number;
+    position: { x: number; y: number };
+    isPanning: boolean;
+    handleWheel: (e: WheelEvent) => void;
+    startPan: (e: React.MouseEvent) => void;
+    movePan: (e: React.MouseEvent) => void;
+    endPan: () => void;
+  };
 }
 
-export function MCDCanvas({ users = [], onCursorMove }: Props) {
+export function MCDCanvas({ users = [], onCursorMove, zoom }: Props) {
   const { model } = useMeriseStore();
   const canvasRef = useRef<HTMLDivElement>(null);
-  const { scale, position, zoomIn, zoomOut, resetZoom, handleWheel, startPan, movePan, endPan, isPanning } = useCanvasZoom();
+  const { scale, position, handleWheel, startPan, movePan, endPan, isPanning } = zoom;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -29,9 +36,14 @@ export function MCDCanvas({ users = [], onCursorMove }: Props) {
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     movePan(e);
     if (onCursorMove) {
-      onCursorMove(e.clientX, e.clientY);
+      const rect = canvasRef.current?.getBoundingClientRect();
+      if (rect) {
+        const x = (e.clientX - rect.left - position.x) / scale;
+        const y = (e.clientY - rect.top - position.y) / scale;
+        onCursorMove(x, y);
+      }
     }
-  }, [movePan, onCursorMove]);
+  }, [movePan, onCursorMove, position, scale]);
 
   return (
     <div 
@@ -95,7 +107,6 @@ export function MCDCanvas({ users = [], onCursorMove }: Props) {
         </div>
       )}
 
-      <ZoomControls scale={scale} onZoomIn={zoomIn} onZoomOut={zoomOut} onReset={resetZoom} />
       <CollaboratorCursors users={users} />
     </div>
   );

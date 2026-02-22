@@ -1,8 +1,20 @@
 import { Info } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useMeriseStore } from '@/hooks/useMeriseStore';
+import { ZoomControls } from '@/components/canvas/ZoomControls';
 
-export function MLDSidebar() {
+interface ZoomControlProps {
+  scale: number;
+  onZoomIn: () => void;
+  onZoomOut: () => void;
+  onReset: () => void;
+}
+
+interface MLDSidebarProps {
+  zoomControls: ZoomControlProps;
+}
+
+export function MLDSidebar({ zoomControls }: MLDSidebarProps) {
   const { mldModel, model } = useMeriseStore();
 
   if (!mldModel) return null;
@@ -74,6 +86,9 @@ export function MLDSidebar() {
             )}
           </div>
         </div>
+      </div>
+      <div className="border-t border-border/50 p-2">
+        <ZoomControls scale={zoomControls.scale} onZoomIn={zoomControls.onZoomIn} onZoomOut={zoomControls.onZoomOut} onReset={zoomControls.onReset} inline />
       </div>
     </div>
   );

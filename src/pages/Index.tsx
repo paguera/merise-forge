@@ -48,6 +48,7 @@ const Index = () => {
           
           <CanvasProtectionOverlay 
             isPremium={!!isPremium} 
+            isAuthenticated={!!user}
             onUpgrade={() => setPremiumOpen(true)} 
           />
         </div>

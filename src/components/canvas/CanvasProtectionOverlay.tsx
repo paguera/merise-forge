@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Crown, Lock, ShieldAlert } from 'lucide-react';
+import { Crown, ShieldAlert } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface CanvasProtectionOverlayProps {
@@ -55,57 +55,6 @@ export function CanvasProtectionOverlay({ isPremium, onUpgrade }: CanvasProtecti
     <>
       {/* Persistent watermark overlay — visible on any screenshot */}
       <div className="absolute inset-0 z-40 pointer-events-none select-none overflow-hidden">
-        {/* Dense repeating watermark text */}
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage: `
-              repeating-linear-gradient(
-                -45deg,
-                transparent,
-                transparent 80px,
-                hsl(var(--primary) / 0.04) 80px,
-                hsl(var(--primary) / 0.04) 82px
-              )
-            `,
-          }}
-        />
-
-        {/* Watermark text grid — renders on screenshot */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div
-            className="absolute"
-            style={{
-              width: '200%',
-              height: '200%',
-              top: '-50%',
-              left: '-50%',
-              transform: 'rotate(-30deg)',
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, 300px)',
-              gridTemplateRows: 'repeat(auto-fill, 120px)',
-              gap: '0px',
-              opacity: 0.06,
-            }}
-          >
-            {Array.from({ length: 60 }).map((_, i) => (
-              <div
-                key={i}
-                className="flex items-center justify-center text-foreground font-bold text-lg whitespace-nowrap select-none"
-                style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
-              >
-                RESSOU MERISE — NON LICENCIÉ
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Lock indicator */}
-        <div className="absolute top-4 right-4 flex items-center gap-2 bg-background/80 backdrop-blur-sm px-3 py-1.5 rounded-full border border-border/50 pointer-events-auto">
-          <Lock className="w-4 h-4 text-muted-foreground" />
-          <span className="text-xs text-muted-foreground font-medium">Protection anti-capture</span>
-        </div>
-
         {/* Upgrade button */}
         <div className="absolute bottom-4 right-4 pointer-events-auto">
           <motion.button

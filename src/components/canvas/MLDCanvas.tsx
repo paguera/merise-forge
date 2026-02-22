@@ -38,7 +38,7 @@ export function MLDCanvas({ users = [], onCursorMove }: Props) {
 
   if (!mldModel) {
     return (
-      <div id="merise-canvas" className="flex-1 canvas-bg relative overflow-hidden min-h-[600px] flex items-center justify-center">
+      <div id="merise-canvas" className="flex-1 canvas-bg relative overflow-hidden h-full flex items-center justify-center">
         <div className="text-center text-muted-foreground">
           <p className="text-lg font-medium">Aucun modèle MLD</p>
           <p className="text-sm">Créez d'abord un MCD pour le transformer</p>
@@ -54,7 +54,7 @@ export function MLDCanvas({ users = [], onCursorMove }: Props) {
   return (
     <div 
       id="merise-canvas" 
-      className="flex-1 canvas-bg relative overflow-hidden min-h-[600px]"
+      className="flex-1 canvas-bg relative overflow-hidden h-full"
       ref={canvasRef}
       onMouseDown={startPan}
       onMouseMove={handleMouseMove}

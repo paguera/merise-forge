@@ -158,6 +158,60 @@
     --sidebar-border: 0 0% 18%;
     --sidebar-ring: 141 73% 42%;
   }
+
+  /* Dark Violet Neon / Cyberpunk Theme */
+  .violet {
+    --background: 270 50% 5%;
+    --foreground: 270 30% 95%;
+
+    --card: 270 45% 9%;
+    --card-foreground: 270 30% 95%;
+
+    --popover: 270 45% 9%;
+    --popover-foreground: 270 30% 95%;
+
+    --primary: 270 100% 65%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 270 40% 14%;
+    --secondary-foreground: 270 30% 95%;
+
+    --muted: 270 30% 14%;
+    --muted-foreground: 270 20% 60%;
+
+    --accent: 300 100% 60%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 90% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 270 40% 18%;
+    --input: 270 40% 18%;
+    --ring: 270 100% 65%;
+
+    --canvas: 270 50% 6%;
+    --canvas-grid: 270 40% 14%;
+    --entity: 270 40% 12%;
+    --entity-border: 270 100% 65%;
+    --relation: 270 40% 12%;
+    --relation-border: 300 100% 60%;
+    --pk-badge: 270 100% 65%;
+    --fk-badge: 300 100% 60%;
+    --junction-table: 270 40% 12%;
+    --junction-border: 270 30% 35%;
+
+    --sidebar-background: 270 45% 9%;
+    --sidebar-foreground: 270 30% 95%;
+    --sidebar-primary: 270 100% 65%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 270 40% 14%;
+    --sidebar-accent-foreground: 270 30% 95%;
+    --sidebar-border: 270 40% 18%;
+    --sidebar-ring: 270 100% 65%;
+
+    --neon-glow: 270 100% 65%;
+    --neon-accent: 300 100% 60%;
+  }
 }
 
 @layer base {
@@ -192,7 +246,8 @@
   }
 
   .dark .neu-card,
-  .spotify .neu-card {
+  .spotify .neu-card,
+  .violet .neu-card-base {
     box-shadow: 
       6px 6px 12px hsl(0 0% 0% / 0.4),
       -6px -6px 12px hsl(var(--card) / 0.3);
@@ -321,6 +376,66 @@
     animation: sparkle 1.5s ease-in-out infinite;
   }
 
+  /* Neon Icon Animations — Violet theme */
+  .icon-neon-pulse {
+    animation: neonPulse 2s ease-in-out infinite;
+    filter: drop-shadow(0 0 4px hsl(270 100% 65% / 0.6));
+  }
+
+  .icon-neon-hover:hover {
+    animation: neonBounce 0.4s ease-out;
+    filter: drop-shadow(0 0 8px hsl(270 100% 65% / 0.8)) drop-shadow(0 0 16px hsl(300 100% 60% / 0.4));
+  }
+
+  .icon-neon-spin:hover {
+    animation: neonSpin 0.5s ease-in-out;
+    filter: drop-shadow(0 0 6px hsl(270 100% 65% / 0.7));
+  }
+
+  .violet .glass-effect {
+    background: hsla(270 45% 9% / 0.85);
+    backdrop-filter: blur(16px);
+    border: 1px solid hsla(270 100% 65% / 0.15);
+    box-shadow: 0 0 20px hsla(270 100% 65% / 0.05), inset 0 0 20px hsla(270 100% 65% / 0.03);
+  }
+
+  .violet .gradient-text {
+    background: linear-gradient(135deg, hsl(270 100% 65%), hsl(300 100% 60%), hsl(270 100% 75%));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .violet .neu-card {
+    box-shadow:
+      6px 6px 12px hsl(270 50% 2% / 0.6),
+      -6px -6px 12px hsl(270 45% 12% / 0.3),
+      0 0 15px hsl(270 100% 65% / 0.05);
+  }
+
+  .violet .neu-card:hover {
+    box-shadow:
+      8px 8px 18px hsl(270 50% 2% / 0.7),
+      -8px -8px 18px hsl(270 45% 12% / 0.4),
+      0 0 25px hsl(270 100% 65% / 0.1);
+  }
+
+  /* Apply neon hover to all icons in violet theme */
+  .violet button svg,
+  .violet a svg {
+    transition: filter 0.3s ease, transform 0.2s ease;
+  }
+
+  .violet button:hover svg,
+  .violet a:hover svg {
+    filter: drop-shadow(0 0 6px hsl(270 100% 65% / 0.6));
+    transform: scale(1.1);
+  }
+
+  .violet button:active svg {
+    transform: scale(0.95);
+  }
+
   .admin-badge-gold {
     background: linear-gradient(135deg, hsl(45 93% 47%), hsl(38 92% 50%), hsl(45 93% 47%));
     background-size: 200% 200%;
@@ -404,4 +519,29 @@
 @keyframes float {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-5px); }
+}
+
+@keyframes neonPulse {
+  0%, 100% { 
+    filter: drop-shadow(0 0 4px hsla(270 100% 65% / 0.5));
+    transform: scale(1);
+  }
+  50% { 
+    filter: drop-shadow(0 0 10px hsla(270 100% 65% / 0.8)) drop-shadow(0 0 20px hsla(300 100% 60% / 0.4));
+    transform: scale(1.05);
+  }
+}
+
+@keyframes neonBounce {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.2) rotate(5deg); }
+  50% { transform: scale(0.95) rotate(-3deg); }
+  70% { transform: scale(1.1) rotate(2deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+@keyframes neonSpin {
+  0% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) scale(1.15); }
+  100% { transform: rotate(360deg) scale(1); }
 }

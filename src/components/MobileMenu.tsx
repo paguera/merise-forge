@@ -26,7 +26,8 @@ import {
   Layers,
   Sparkles,
   Home,
-  Settings
+  Settings,
+  Zap
 } from 'lucide-react';
 import { UserProfile, UserRole } from '@/hooks/useAuth';
 import { ViewMode } from '@/types/merise';
@@ -275,14 +276,16 @@ export function MobileMenu({
               className="w-full justify-start h-11 text-base" 
               onClick={() => handleAction(onCycleTheme)}
             >
-              {theme === 'dark' ? (
+              {theme === 'violet' ? (
+                <Zap className="w-5 h-5 mr-3 text-purple-400" />
+              ) : theme === 'dark' ? (
                 <Sun className="w-5 h-5 mr-3 text-amber-400" />
               ) : theme === 'spotify' ? (
                 <Music className="w-5 h-5 mr-3 text-accent" />
               ) : (
                 <Moon className="w-5 h-5 mr-3 text-primary" />
               )}
-              Thème: {theme === 'dark' ? 'Sombre' : theme === 'spotify' ? 'Spotify' : 'Clair'}
+              Thème: {theme === 'violet' ? 'Violet Néon' : theme === 'dark' ? 'Sombre' : theme === 'spotify' ? 'Spotify' : 'Clair'}
             </Button>
 
             {user && (

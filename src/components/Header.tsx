@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Moon, Sun, CloudUpload, FolderOpen, FileArchive, Upload, UsersRound, Music, Clock, Layers, ShieldCheck, User, LogOut, Crown, Shield, Bookmark, Sparkles, Palette, HelpCircle, Menu } from 'lucide-react';
+import { Moon, Sun, CloudUpload, FolderOpen, FileArchive, Upload, UsersRound, Music, Clock, Layers, ShieldCheck, User, LogOut, Crown, Shield, Bookmark, Sparkles, Palette, HelpCircle, Menu, Zap } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 import { Button } from '@/components/ui/button';
@@ -407,7 +407,7 @@ export function Header({
           await new Promise(r => setTimeout(r, 100));
           const dataUrl = await toPng(canvas, {
             quality: 1,
-            backgroundColor: theme === 'spotify' ? '#0a0a0a' : theme === 'dark' ? '#1a1a2e' : '#e8eef5',
+            backgroundColor: theme === 'violet' ? '#0d0520' : theme === 'spotify' ? '#0a0a0a' : theme === 'dark' ? '#1a1a2e' : '#e8eef5',
             width: minWidth,
             height: minHeight,
             style: {
@@ -724,11 +724,11 @@ export function Header({
         <Tooltip>
           <TooltipTrigger asChild>
             <Button variant="ghost" size="icon" onClick={cycleTheme} className="hover:bg-primary/10">
-              {theme === 'dark' ? <Sun className="w-5 h-5 text-amber-400" /> : theme === 'spotify' ? <Music className="w-5 h-5 text-accent" /> : <Moon className="w-5 h-5 text-primary" />}
+              {theme === 'violet' ? <Zap className="w-5 h-5 text-purple-400 icon-neon-pulse" /> : theme === 'dark' ? <Sun className="w-5 h-5 text-amber-400" /> : theme === 'spotify' ? <Music className="w-5 h-5 text-accent" /> : <Moon className="w-5 h-5 text-primary" />}
             </Button>
           </TooltipTrigger>
           <TooltipContent side="bottom" className="animate-scale-in">
-            <p>Thème: {theme === 'dark' ? 'Sombre' : theme === 'spotify' ? 'Spotify' : 'Clair'}</p>
+            <p>Thème: {theme === 'violet' ? 'Violet Néon' : theme === 'dark' ? 'Sombre' : theme === 'spotify' ? 'Spotify' : 'Clair'}</p>
           </TooltipContent>
         </Tooltip>
 

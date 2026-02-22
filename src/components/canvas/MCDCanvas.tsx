@@ -36,7 +36,7 @@ export function MCDCanvas({ users = [], onCursorMove }: Props) {
   return (
     <div 
       id="merise-canvas" 
-      className="flex-1 canvas-bg relative overflow-hidden min-h-[600px]"
+      className="flex-1 canvas-bg relative overflow-hidden h-full"
       ref={canvasRef}
       onMouseDown={startPan}
       onMouseMove={handleMouseMove}

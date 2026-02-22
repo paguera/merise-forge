@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Moon, Sun, CloudUpload, FolderOpen, FileArchive, Upload, UsersRound, Music, Clock, Layers, ShieldCheck, User, LogOut, Crown, Shield, Bookmark, Sparkles, Palette, HelpCircle, Menu } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { ThemeLogo } from '@/components/ThemeLogo';
+
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';

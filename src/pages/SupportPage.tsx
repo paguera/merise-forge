@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ThemeLogo } from '@/components/ThemeLogo';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -65,6 +65,7 @@ const priorityLabels: Record<string, string> = {
 export default function SupportPage() {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
+  const { settings, hasLogo, getLogoSize } = useSiteSettings();
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
   const [responses, setResponses] = useState<TicketResponse[]>([]);
@@ -198,7 +199,9 @@ export default function SupportPage() {
             <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
               <ArrowLeft className="w-5 h-5" />
             </Button>
-            <ThemeLogo className="h-8" />
+            {hasLogo() && settings.logo_url && (
+              <img src={settings.logo_url} alt="Logo" style={{ height: `${getLogoSize()}px` }} className="object-contain" />
+            )}
             <h1 className="text-xl font-semibold hidden md:block">Support</h1>
           </div>
         </div>

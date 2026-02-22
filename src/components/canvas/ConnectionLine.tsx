@@ -12,12 +12,10 @@ interface ConnectionLineProps {
 
 const ENTITY_HALF_W = 75;
 const ENTITY_HALF_H = 30;
-const RELATION_HALF_W = 40;
-const RELATION_HALF_H = 16;
 
 /**
- * Get edge intersection point of a line from center (cx,cy) toward target (tx,ty)
- * on a rectangle of half-width hw and half-height hh.
+ * Get the point where a line from (cx,cy) toward (tx,ty) exits a rectangle
+ * centered at (cx,cy) with half-dimensions (hw,hh).
  */
 function getEdgePoint(
   cx: number, cy: number, hw: number, hh: number,
@@ -40,50 +38,64 @@ function getEdgePoint(
   return { x: cx + dx * scale, y: cy + dy * scale };
 }
 
+/** Move `dist` px from `from` toward `to`. */
+function pointAlong(
+  from: { x: number; y: number },
+  to: { x: number; y: number },
+  dist: number
+): { x: number; y: number } {
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const len = Math.sqrt(dx * dx + dy * dy) || 1;
+  return {
+    x: from.x + (dx / len) * dist,
+    y: from.y + (dy / len) * dist,
+  };
+}
+
 export function ConnectionLine({
   x1, y1, x2, y2,
   relationX, relationY,
   cardinality1, cardinality2,
 }: ConnectionLineProps) {
-  const relCX = relationX + RELATION_HALF_W;
-  const relCY = relationY + RELATION_HALF_H;
+  // Relation center (the relation node is an ellipse/pill centered here)
+  const relCX = relationX + 40;
+  const relCY = relationY + 16;
 
-  // Edge points: line exits entity edge and enters relation edge
+  // Edge points on entities (lines start from entity border, not center)
   const e1Edge = getEdgePoint(x1, y1, ENTITY_HALF_W, ENTITY_HALF_H, relCX, relCY);
-  const relEdge1 = getEdgePoint(relCX, relCY, RELATION_HALF_W, RELATION_HALF_H, x1, y1);
-  const relEdge2 = getEdgePoint(relCX, relCY, RELATION_HALF_W, RELATION_HALF_H, x2, y2);
   const e2Edge = getEdgePoint(x2, y2, ENTITY_HALF_W, ENTITY_HALF_H, relCX, relCY);
 
-  // Cardinality positions: fixed distance outside the entity edge along the line
-  const CARD_DIST = 30;
-  const card1Pos = getPointAlongLine(e1Edge, relEdge1, CARD_DIST);
-  const card2Pos = getPointAlongLine(e2Edge, relEdge2, CARD_DIST);
+  // Draw straight lines from entity edges to relation CENTER (not edge)
+  // so the two segments join seamlessly through the relation node
+
+  // Cardinality badges: 30px outside entity edge, along the line
+  const card1Pos = pointAlong(e1Edge, { x: relCX, y: relCY }, 30);
+  const card2Pos = pointAlong(e2Edge, { x: relCX, y: relCY }, 30);
 
   return (
     <g>
-      {/* Straight line: entity 1 edge → relation edge */}
+      {/* Single continuous line: entity1 edge → relation center → entity2 edge */}
       <line
         x1={e1Edge.x} y1={e1Edge.y}
-        x2={relEdge1.x} y2={relEdge1.y}
+        x2={relCX} y2={relCY}
         stroke="hsl(var(--primary))"
         strokeWidth="2"
         strokeLinecap="round"
       />
-
-      {/* Straight line: relation edge → entity 2 edge */}
       <line
-        x1={relEdge2.x} y1={relEdge2.y}
+        x1={relCX} y1={relCY}
         x2={e2Edge.x} y2={e2Edge.y}
         stroke="hsl(var(--primary))"
         strokeWidth="2"
         strokeLinecap="round"
       />
 
-      {/* Small dots at entity connection points */}
+      {/* Dots at entity connection points */}
       <circle cx={e1Edge.x} cy={e1Edge.y} r="4" fill="hsl(var(--primary))" />
       <circle cx={e2Edge.x} cy={e2Edge.y} r="4" fill="hsl(var(--primary))" />
 
-      {/* Cardinality 1 — outside entity 1 */}
+      {/* Cardinality 1 — near entity 1 */}
       <g>
         <rect
           x={card1Pos.x - 22} y={card1Pos.y - 12}
@@ -103,7 +115,7 @@ export function ConnectionLine({
         </text>
       </g>
 
-      {/* Cardinality 2 — outside entity 2 */}
+      {/* Cardinality 2 — near entity 2 */}
       <g>
         <rect
           x={card2Pos.x - 22} y={card2Pos.y - 12}
@@ -124,19 +136,4 @@ export function ConnectionLine({
       </g>
     </g>
   );
-}
-
-/** Move `dist` pixels from `from` toward `to`. */
-function getPointAlongLine(
-  from: { x: number; y: number },
-  to: { x: number; y: number },
-  dist: number
-): { x: number; y: number } {
-  const dx = to.x - from.x;
-  const dy = to.y - from.y;
-  const len = Math.sqrt(dx * dx + dy * dy) || 1;
-  return {
-    x: from.x + (dx / len) * dist,
-    y: from.y + (dy / len) * dist,
-  };
 }

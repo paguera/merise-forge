@@ -15,7 +15,7 @@ import { useRealtimeProject } from '@/hooks/useRealtimeProject';
 import { useAuth } from '@/hooks/useAuth';
 
 const Index = () => {
-  const { viewMode } = useMeriseStore();
+  const { viewMode, isReadOnly } = useMeriseStore();
   const realtime = useRealtimeProject();
   const { user, isPremium, refreshProfile } = useAuth();
   const { users, updateCursor, connected, projectId, username, myColor } = realtime;
@@ -50,6 +50,7 @@ const Index = () => {
         username={username} 
         userColor={myColor}
         connected={connected}
+        isReadOnly={isReadOnly}
       />
 
       <PremiumDialog 

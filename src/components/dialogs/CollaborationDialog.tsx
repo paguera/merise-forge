@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Users, Wifi, WifiOff, Circle, Wand2, Copy, Check, Shield, ChevronRight, AlertCircle, Crown } from 'lucide-react';
+import { Users, Wifi, WifiOff, Circle, Wand2, Copy, Check, Shield, ChevronRight, AlertCircle, Crown, Eye } from 'lucide-react';
 import { generateProjectCode, validateProjectCode } from '@/lib/projectCodeGenerator';
 import { toast } from 'sonner';
 import { UserStatsModal } from './UserStatsModal';
@@ -22,7 +22,7 @@ import type { ProjectUserStat } from '@/hooks/useProjectUserStats';
 interface Props {
   open: boolean;
   onOpenChange: (o: boolean) => void;
-  onJoin: (name: string, username: string) => void;
+  onJoin: (name: string, username: string, asGuest?: boolean) => void;
   connected: boolean;
   projectName: string;
   username: string;
@@ -61,7 +61,7 @@ export function CollaborationDialog({
   const [statsModalOpen, setStatsModalOpen] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
 
-  const handleJoin = () => {
+  const handleJoin = (asGuest: boolean = false) => {
     if (!name.trim() || !user.trim()) return;
     
     // Validate project code format
@@ -72,7 +72,7 @@ export function CollaborationDialog({
     }
     
     setValidationError(null);
-    onJoin(name.trim(), user.trim());
+    onJoin(name.trim(), user.trim(), asGuest);
     onOpenChange(false);
   };
 
@@ -366,14 +366,25 @@ export function CollaborationDialog({
 
           <DialogFooter className="gap-2 flex-shrink-0">
             {!connected ? (
-              <Button 
-                onClick={handleJoin} 
-                disabled={!name.trim() || !user.trim() || !isAuthenticated}
-                className="w-full sm:w-auto"
-              >
-                <Users className="w-4 h-4 mr-2" />
-                Rejoindre
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-2 w-full">
+                <Button 
+                  variant="outline"
+                  onClick={() => handleJoin(true)} 
+                  disabled={!name.trim() || !user.trim() || !isAuthenticated}
+                  className="flex-1"
+                >
+                  <Eye className="w-4 h-4 mr-2" />
+                  Rejoindre en invité
+                </Button>
+                <Button 
+                  onClick={() => handleJoin(false)} 
+                  disabled={!name.trim() || !user.trim() || !isAuthenticated}
+                  className="flex-1"
+                >
+                  <Users className="w-4 h-4 mr-2" />
+                  Rejoindre
+                </Button>
+              </div>
             ) : (
               <>
                 <Button variant="outline" onClick={onPush}>

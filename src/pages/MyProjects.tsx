@@ -95,18 +95,16 @@ export default function MyProjects() {
     
     setLoading(true);
     try {
-      // Get user identifier (use both email and id for matching)
-      const userIdentifiers = [user.email, user.id].filter(Boolean);
-      
-      // Fetch projects where user is the creator (check both email and id)
+      // Fetch projects where user is the creator (by auth UUID)
       const { data: createdProjects, error: createdError } = await supabase
         .from('projects')
         .select('*')
-        .or(userIdentifiers.map(id => `creator_id.eq.${id}`).join(','));
+        .eq('creator_user_id', user.id);
 
       if (createdError) throw createdError;
 
-      // Fetch projects where user has stats (participated) - check with email
+      // Fetch projects where user participated (by email or id in project_user_stats)
+      const userIdentifiers = [user.email, user.id].filter(Boolean);
       const { data: participatedStats, error: statsError } = await supabase
         .from('project_user_stats')
         .select('project_id')
@@ -139,7 +137,6 @@ export default function MyProjects() {
         ...participatedProjects
       ];
 
-      // Sort by updated_at descending
       allProjects.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
 
       setCloudProjects(allProjects);
@@ -254,11 +251,21 @@ export default function MyProjects() {
     }
 
     try {
-      // For now we track visibility locally since we need to add column to DB
-      // This would need a migration to add is_public column
-      toast.info('Fonctionnalité de visibilité à venir');
+      const newValue = !project.is_public;
+      const { error } = await supabase
+        .from('projects')
+        .update({ is_public: newValue })
+        .eq('id', project.id);
+
+      if (error) throw error;
+
+      setCloudProjects(prev => 
+        prev.map(p => p.id === project.id ? { ...p, is_public: newValue } : p)
+      );
+      toast.success(newValue ? 'Projet rendu public' : 'Projet rendu privé');
     } catch (error) {
       console.error('Error toggling visibility:', error);
+      toast.error('Erreur lors du changement de visibilité');
     }
   };
 
@@ -430,6 +437,10 @@ export default function MyProjects() {
                                       Créateur
                                     </Badge>
                                   )}
+                                  <Badge variant={project.is_public ? 'secondary' : 'outline'} className="text-xs shrink-0">
+                                    {project.is_public ? <Globe className="w-3 h-3 mr-1" /> : <Lock className="w-3 h-3 mr-1" />}
+                                    {project.is_public ? 'Public' : 'Privé'}
+                                  </Badge>
                                 </CardTitle>
                                 <CardDescription className="mt-1 line-clamp-2">
                                   {project.description || 'Aucune description'}
@@ -469,6 +480,15 @@ export default function MyProjects() {
                             <div className="flex gap-2">
                               {project.isCreator && (
                                 <>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleToggleVisibility(project)}
+                                    className="shrink-0"
+                                    title={project.is_public ? 'Rendre privé' : 'Rendre public'}
+                                  >
+                                    {project.is_public ? <Globe className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
+                                  </Button>
                                   <Button
                                     size="sm"
                                     variant="outline"

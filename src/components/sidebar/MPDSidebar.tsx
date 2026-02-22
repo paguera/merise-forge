@@ -9,8 +9,20 @@ import { AddColumnDialog } from '@/components/dialogs/AddColumnDialog';
 import { AddTableDialog } from '@/components/dialogs/AddTableDialog';
 import { EditColumnDialog } from '@/components/dialogs/EditColumnDialog';
 import { MLDColumn } from '@/types/merise';
+import { ZoomControls } from '@/components/canvas/ZoomControls';
 
-export function MPDSidebar() {
+interface ZoomControlProps {
+  scale: number;
+  onZoomIn: () => void;
+  onZoomOut: () => void;
+  onReset: () => void;
+}
+
+interface MPDSidebarProps {
+  zoomControls: ZoomControlProps;
+}
+
+export function MPDSidebar({ zoomControls }: MPDSidebarProps) {
   const { mldModel, generatedSQL, sqlDialect, addTable, removeTable, addColumnToTable, updateColumnInTable, removeColumnFromTable } = useMeriseStore();
   const [selectedTable, setSelectedTable] = useState<string>('');
   const [isAddColumnOpen, setIsAddColumnOpen] = useState(false);
@@ -204,6 +216,9 @@ export function MPDSidebar() {
           }
         }}
       />
+      <div className="border-t border-border/50 p-2">
+        <ZoomControls scale={zoomControls.scale} onZoomIn={zoomControls.onZoomIn} onZoomOut={zoomControls.onZoomOut} onReset={zoomControls.onReset} inline />
+      </div>
     </div>
   );
 }

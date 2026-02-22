@@ -2,9 +2,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { useMeriseStore } from '@/hooks/useMeriseStore';
 import { TableNode } from './TableNode';
 import { MLDConnectionLine } from './MLDConnectionLine';
-import { ZoomControls } from './ZoomControls';
 import { CollaboratorCursors } from './CollaboratorCursors';
-import { useCanvasZoom } from '@/hooks/useCanvasZoom';
 import type { PresenceUser } from '@/hooks/useRealtimePresence';
 
 const TABLE_WIDTH = 180;
@@ -14,12 +12,21 @@ const TABLE_ROW_HEIGHT = 36;
 interface Props {
   users?: PresenceUser[];
   onCursorMove?: (x: number, y: number) => void;
+  zoom: {
+    scale: number;
+    position: { x: number; y: number };
+    isPanning: boolean;
+    handleWheel: (e: WheelEvent) => void;
+    startPan: (e: React.MouseEvent) => void;
+    movePan: (e: React.MouseEvent) => void;
+    endPan: () => void;
+  };
 }
 
-export function MLDCanvas({ users = [], onCursorMove }: Props) {
+export function MLDCanvas({ users = [], onCursorMove, zoom }: Props) {
   const { mldModel } = useMeriseStore();
   const canvasRef = useRef<HTMLDivElement>(null);
-  const { scale, position, zoomIn, zoomOut, resetZoom, handleWheel, startPan, movePan, endPan, isPanning } = useCanvasZoom();
+  const { scale, position, handleWheel, startPan, movePan, endPan, isPanning } = zoom;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -32,24 +39,25 @@ export function MLDCanvas({ users = [], onCursorMove }: Props) {
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     movePan(e);
     if (onCursorMove) {
-      onCursorMove(e.clientX, e.clientY);
+      const rect = canvasRef.current?.getBoundingClientRect();
+      if (rect) {
+        const x = (e.clientX - rect.left - position.x) / scale;
+        const y = (e.clientY - rect.top - position.y) / scale;
+        onCursorMove(x, y);
+      }
     }
-  }, [movePan, onCursorMove]);
+  }, [movePan, onCursorMove, position, scale]);
 
   if (!mldModel) {
     return (
       <div id="merise-canvas" className="flex-1 canvas-bg relative overflow-hidden h-full flex items-center justify-center">
         <div className="text-center text-muted-foreground">
           <p className="text-lg font-medium">Aucun modèle MLD</p>
-          <p className="text-sm">Créez d'abord un MCD pour le transformer</p>
+          <p className="text-sm">Créez d'abord un MCD pour générer le MLD</p>
         </div>
       </div>
     );
   }
-
-  const getTableHeight = (columnCount: number) => {
-    return TABLE_HEADER_HEIGHT + (columnCount * TABLE_ROW_HEIGHT);
-  };
 
   return (
     <div 
@@ -71,16 +79,15 @@ export function MLDCanvas({ users = [], onCursorMove }: Props) {
           position: 'relative',
         }}
       >
-        <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 1, overflow: 'visible' }}>
+        <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ overflow: 'visible' }}>
           {mldModel.relations.map((relation) => {
             const fromTable = mldModel.tables.find(t => t.name === relation.fromTable);
             const toTable = mldModel.tables.find(t => t.name === relation.toTable);
-            
             if (!fromTable || !toTable) return null;
-            
-            const fromHeight = getTableHeight(fromTable.columns.length);
-            const toHeight = getTableHeight(toTable.columns.length);
-            
+
+            const fromHeight = TABLE_HEADER_HEIGHT + fromTable.columns.length * TABLE_ROW_HEIGHT;
+            const toHeight = TABLE_HEADER_HEIGHT + toTable.columns.length * TABLE_ROW_HEIGHT;
+
             return (
               <MLDConnectionLine
                 key={relation.id}
@@ -103,7 +110,6 @@ export function MLDCanvas({ users = [], onCursorMove }: Props) {
         ))}
       </div>
 
-      <ZoomControls scale={scale} onZoomIn={zoomIn} onZoomOut={zoomOut} onReset={resetZoom} />
       <CollaboratorCursors users={users} />
     </div>
   );

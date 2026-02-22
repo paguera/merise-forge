@@ -8,8 +8,20 @@ import { useMeriseStore } from '@/hooks/useMeriseStore';
 import { Entity, Relation } from '@/types/merise';
 import { EditEntityDialog } from '@/components/dialogs/EditEntityDialog';
 import { EditRelationDialog } from '@/components/dialogs/EditRelationDialog';
+import { ZoomControls } from '@/components/canvas/ZoomControls';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
+
+interface ZoomControlProps {
+  scale: number;
+  onZoomIn: () => void;
+  onZoomOut: () => void;
+  onReset: () => void;
+}
+
+interface MCDSidebarProps {
+  zoomControls: ZoomControlProps;
+}
 
 type CreationStep = 'entity1' | 'verb' | 'entity2' | 'cardinalities';
 
@@ -57,7 +69,7 @@ const StepIndicator = ({ step, currentStep }: { step: CreationStep; currentStep:
   );
 };
 
-export function MCDSidebar() {
+export function MCDSidebar({ zoomControls }: MCDSidebarProps) {
   const { model, addEntity, addRelation, removeEntity, updateEntity, addAttribute, updateAttribute, removeAttribute, reorderAttributes, updateRelation, removeRelation, resetModel } = useMeriseStore();
   const [editingEntityId, setEditingEntityId] = useState<string | null>(null);
   const [editingRelation, setEditingRelation] = useState<Relation | null>(null);
@@ -637,6 +649,9 @@ export function MCDSidebar() {
           }
         }}
       />
+      <div className="border-t border-border/50 p-2">
+        <ZoomControls scale={zoomControls.scale} onZoomIn={zoomControls.onZoomIn} onZoomOut={zoomControls.onZoomOut} onReset={zoomControls.onReset} inline />
+      </div>
     </div>
   );
 }

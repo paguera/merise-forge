@@ -62,7 +62,8 @@ export function Header({
     settings,
     hasLogo,
     getLogoSize,
-    hasSiteName
+    hasSiteName,
+    isAnnouncementActive,
   } = useSiteSettings();
   const [saveOpen, setSaveOpen] = useState(false);
   const [loadOpen, setLoadOpen] = useState(false);
@@ -487,6 +488,14 @@ export function Header({
     };
   };
   return <TooltipProvider delayDuration={200}>
+    <>
+    {/* Announcement Banner */}
+    {isAnnouncementActive() && (
+      <div className="bg-primary text-primary-foreground text-center py-2 px-4 text-sm font-medium sticky top-0 z-[51]">
+        {settings.announcement_text}
+      </div>
+    )}
+
     <header className="flex items-center justify-between px-3 sm:px-6 py-3 sm:py-4 bg-card/80 backdrop-blur-md border-b border-border/50 sticky top-0 z-50">
       {/* Mobile Menu */}
       <MobileMenu
@@ -749,5 +758,6 @@ export function Header({
         setPremiumOpen(true);
       }} />
     </header>
+    </>
     </TooltipProvider>;
 }

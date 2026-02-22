@@ -269,10 +269,12 @@ export type Database = {
           collaborator_count: number | null
           created_at: string
           creator_id: string | null
+          creator_user_id: string | null
           current_schema_id: string | null
           data: Json
           description: string | null
           id: string
+          is_public: boolean
           name: string
           updated_at: string
         }
@@ -280,10 +282,12 @@ export type Database = {
           collaborator_count?: number | null
           created_at?: string
           creator_id?: string | null
+          creator_user_id?: string | null
           current_schema_id?: string | null
           data?: Json
           description?: string | null
           id?: string
+          is_public?: boolean
           name: string
           updated_at?: string
         }
@@ -291,10 +295,12 @@ export type Database = {
           collaborator_count?: number | null
           created_at?: string
           creator_id?: string | null
+          creator_user_id?: string | null
           current_schema_id?: string | null
           data?: Json
           description?: string | null
           id?: string
+          is_public?: boolean
           name?: string
           updated_at?: string
         }

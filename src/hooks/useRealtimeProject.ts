@@ -80,7 +80,7 @@ export function useRealtimeProject() {
     let timeout: NodeJS.Timeout;
 
     const unsubscribe = useMeriseStore.subscribe((state, prevState) => {
-      if (!autoSyncEnabled.current) return;
+      if (!autoSyncEnabled.current || state.isReadOnly) return;
       
       // Check if relevant state changed
       const modelChanged = JSON.stringify(state.model) !== JSON.stringify(prevState.model);
@@ -104,10 +104,14 @@ export function useRealtimeProject() {
   }, [projectId, connected]);
 
   // Join an existing project or create a new one
-  const joinProject = useCallback(async (name: string, user: string) => {
+  const joinProject = useCallback(async (name: string, user: string, asGuest: boolean = false) => {
     setSyncing(true);
     setUsername(user);
     try {
+      // Get current auth user id
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      const authUserId = authUser?.id || null;
+
       // Check if project exists
       const { data: existing } = await supabase
         .from('projects')
@@ -121,8 +125,8 @@ export function useRealtimeProject() {
 
       if (existing) {
         pid = existing.id;
-        // Check if user is creator (admin)
-        userIsAdmin = existing.creator_id === user;
+        // Check if user is creator (admin) - use UUID
+        userIsAdmin = !!(authUserId && existing.creator_user_id === authUserId);
         setCreatorId(existing.creator_id);
         
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -142,10 +146,17 @@ export function useRealtimeProject() {
         };
         
         setTimeout(() => { autoSyncEnabled.current = true; }, 100);
-        toast.success(`Rejoint le projet "${name}" en tant que ${user}${userIsAdmin ? ' (Admin)' : ''}`);
+        // Set read-only for guests
+        if (asGuest) {
+          useMeriseStore.getState().setReadOnly(true);
+        }
         
-        // Record connection for stats
-        userStats.recordConnection(user);
+        toast.success(`Rejoint le projet "${name}" en tant que ${user}${asGuest ? ' (Invité)' : userIsAdmin ? ' (Admin)' : ''}`);
+        
+        // Record connection for stats (not for guests)
+        if (!asGuest) {
+          userStats.recordConnection(user);
+        }
       } else {
         // Create new project - creator becomes admin
         const currentState = useMeriseStore.getState();
@@ -160,7 +171,8 @@ export function useRealtimeProject() {
           .insert([{ 
             name, 
             data: payloadObj,
-            creator_id: user, // Set creator as admin
+            creator_id: user,
+            creator_user_id: authUserId,
           }])
           .select()
           .single();
@@ -258,6 +270,7 @@ export function useRealtimeProject() {
 
   // Leave project
   const leaveProject = useCallback(() => {
+    useMeriseStore.getState().setReadOnly(false);
     setProjectId(null);
     setProjectName('');
     setUsername('');

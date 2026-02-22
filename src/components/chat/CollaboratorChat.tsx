@@ -16,9 +16,10 @@ interface Props {
   username: string;
   userColor: string;
   connected: boolean;
+  isReadOnly?: boolean;
 }
 
-export function CollaboratorChat({ projectId, username, userColor, connected }: Props) {
+export function CollaboratorChat({ projectId, username, userColor, connected, isReadOnly = false }: Props) {
   // All hooks MUST be called unconditionally at the top, before any conditional returns
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
@@ -205,27 +206,35 @@ export function CollaboratorChat({ projectId, username, userColor, connected }: 
                 </div>
               </ScrollArea>
 
-              {/* Input */}
-              <div className="p-3 border-t border-border bg-secondary/30">
-                <div className="flex items-center gap-2">
-                  <Input
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="Votre message..."
-                    className="flex-1"
-                    autoComplete="off"
-                  />
-                  <Button
-                    onClick={handleSend}
-                    disabled={!inputValue.trim()}
-                    size="icon"
-                    className="shrink-0"
-                  >
-                    <Send className="w-4 h-4" />
-                  </Button>
+              {/* Input - hidden for guests */}
+              {isReadOnly ? (
+                <div className="p-3 border-t border-border bg-secondary/30 text-center">
+                  <p className="text-xs text-muted-foreground">
+                    Mode invité — lecture seule
+                  </p>
                 </div>
-              </div>
+              ) : (
+                <div className="p-3 border-t border-border bg-secondary/30">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={inputValue}
+                      onChange={(e) => setInputValue(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      placeholder="Votre message..."
+                      className="flex-1"
+                      autoComplete="off"
+                    />
+                    <Button
+                      onClick={handleSend}
+                      disabled={!inputValue.trim()}
+                      size="icon"
+                      className="shrink-0"
+                    >
+                      <Send className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </>
           )}
         </div>

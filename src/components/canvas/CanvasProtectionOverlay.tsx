@@ -3,6 +3,10 @@ import { Crown, LogIn } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 
+// 🔓 TEMPORAIRE : désactive complètement la protection (auth + premium)
+// Remets à `true` pour réactiver le flou non-connecté et le bouton Premium.
+const PROTECTION_ENABLED = false;
+
 interface CanvasProtectionOverlayProps {
   isPremium: boolean;
   isAuthenticated: boolean;
@@ -17,7 +21,7 @@ export function CanvasProtectionOverlay({ isPremium, isAuthenticated, onUpgrade 
     const canvas = document.getElementById('merise-canvas');
     if (!canvas) return;
 
-    if (!isAuthenticated) {
+    if (PROTECTION_ENABLED && !isAuthenticated) {
       canvas.style.filter = 'blur(6px)';
       canvas.style.pointerEvents = 'none';
       canvas.style.userSelect = 'none';
@@ -35,6 +39,11 @@ export function CanvasProtectionOverlay({ isPremium, isAuthenticated, onUpgrade 
       }
     };
   }, [isAuthenticated]);
+
+  // Protection désactivée → accès totalement libre
+  if (!PROTECTION_ENABLED) {
+    return null;
+  }
 
   // Not authenticated — blur + login CTA
   if (!isAuthenticated) {

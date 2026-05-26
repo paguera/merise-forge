@@ -338,8 +338,8 @@ export function Header({
     toast.success(`Projet "${name}" supprimé`);
   };
   const handleExportZip = async () => {
-    // Check premium status for ZIP export
-    if (!isPremium) {
+    // 🔓 TEMPORAIRE : premium désactivé. Remets `if (!isPremium)` pour réactiver.
+    if (false && !isPremium) {
       setPremiumOpen(true);
       return;
     }

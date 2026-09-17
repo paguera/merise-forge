@@ -199,7 +199,7 @@ export function CollaborationDialog({
                   <div className="flex gap-2">
                     <Input
                       id="project-name"
-                      placeholder="ex: Ressou.Merise-AlphaCore-XY12"
+                      placeholder="ex: MeriseForge-AlphaCore-XY12"
                       value={name}
                       onChange={(e) => handleNameChange(e.target.value)}
                       className={`flex-1 ${validationError ? 'border-destructive' : ''}`}
@@ -236,7 +236,7 @@ export function CollaborationDialog({
                   ) : (
                     <p className="text-xs text-muted-foreground">
                       {isPremium 
-                        ? "Cliquez sur la baguette pour générer un code unique (format: Ressou.Merise-...)"
+                        ? "Cliquez sur la baguette pour générer un code unique (format: MeriseForge-...)"
                         : "Entrez un code existant pour rejoindre un projet"}
                     </p>
                   )}

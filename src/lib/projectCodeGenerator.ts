@@ -1,4 +1,4 @@
-// Génération de codes de projet avec préfixe Ressou.Merise
+// Génération de codes de projet avec préfixe MeriseForge
 const ADJECTIVES = [
   'Alpha', 'Beta', 'Delta', 'Gamma', 'Omega', 'Sigma', 'Zeta', 'Nova',
   'Stellar', 'Cosmic', 'Quantum', 'Prism', 'Nexus', 'Apex', 'Prime', 'Core',
@@ -24,12 +24,15 @@ export function generateProjectCode(): string {
   const noun = NOUNS[Math.floor(Math.random() * NOUNS.length)];
   const suffix = generateRandomSuffix();
   
-  return `Ressou.Merise-${adjective}${noun}-${suffix}`;
+  return `MeriseForge-${adjective}${noun}-${suffix}`;
 }
 
-export function isRessouMeriseCode(code: string): boolean {
-  return code.startsWith('Ressou.Merise-');
+export function isMeriseForgeCode(code: string): boolean {
+  return code.startsWith('MeriseForge-') || code.startsWith('Ressou.Merise-');
 }
+
+// Alias for backwards compatibility
+export const isRessouMeriseCode = isMeriseForgeCode;
 
 // Validate that a project code follows the required format
 export function validateProjectCode(code: string): { valid: boolean; message?: string } {
@@ -37,11 +40,11 @@ export function validateProjectCode(code: string): { valid: boolean; message?: s
     return { valid: false, message: 'Le code projet est requis' };
   }
   
-  if (!code.startsWith('Ressou.Merise-')) {
-    return { valid: false, message: 'Le code doit commencer par "Ressou.Merise-"' };
+  if (!code.startsWith('MeriseForge-') && !code.startsWith('Ressou.Merise-')) {
+    return { valid: false, message: 'Le code doit commencer par "MeriseForge-"' };
   }
   
-  if (code.length < 20) {
+  if (code.length < 16) {
     return { valid: false, message: 'Le code projet est trop court' };
   }
   

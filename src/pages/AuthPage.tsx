@@ -86,9 +86,23 @@ export default function AuthPage() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <header className="flex items-center justify-center gap-3 px-6 py-6 bg-card border-b border-border">
-        <Database className="w-8 h-8 text-primary" />
-        <h1 className="text-2xl font-bold text-primary">Ressou Merize</h1>
+      <header className="flex items-center justify-center gap-3 px-6 py-5 bg-card/80 backdrop-blur-md border-b border-border/50">
+        <img
+          src="/logo.jpeg"
+          alt="MERISE FORGE"
+          className="w-9 h-9 rounded-xl object-cover shadow-sm ring-1 ring-primary/30"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = '/logo.jpg';
+          }}
+        />
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-extrabold bg-gradient-to-r from-primary via-blue-400 to-primary bg-clip-text text-transparent">
+            MERISE FORGE
+          </h1>
+          <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
+            by PAGUERA
+          </span>
+        </div>
       </header>
 
       {/* Main Content */}
@@ -97,7 +111,7 @@ export default function AuthPage() {
           {/* Hero Section */}
           <div className="text-center space-y-2">
             <h2 className="text-3xl font-bold text-foreground">
-              Bienvenue sur Ressou Merize
+              Bienvenue sur MERISE FORGE
             </h2>
             <p className="text-muted-foreground">
               L'outil professionnel de modélisation Merise

@@ -10,7 +10,7 @@ export function useSiteSettings() {
   const [settings, setSettings] = useState<Record<string, string | null>>({
     logo_url: null,
     logo_size: '48',
-    site_name: 'Ressou Merise',
+    site_name: 'MERISE FORGE',
     announcement_text: null,
     announcement_active: 'false',
   });

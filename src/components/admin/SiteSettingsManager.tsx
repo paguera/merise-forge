@@ -222,7 +222,7 @@ export function SiteSettingsManager({ settings, onUpdate }: SiteSettingsManagerP
           <div className="space-y-2">
             <Label>Nom du site</Label>
             <Input
-              placeholder="Ressou Merise"
+              placeholder="MERISE FORGE"
               value={getSetting('site_name') || ''}
               onChange={(e) => updateLocal('site_name', e.target.value)}
             />

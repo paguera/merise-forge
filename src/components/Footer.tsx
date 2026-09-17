@@ -21,7 +21,7 @@ const socialIcons: Record<string, React.ReactNode> = {
 };
 
 export function Footer() {
-  const [footerText, setFooterText] = useState('MERISE © 2024 - Tous droits réservés');
+  const [footerText, setFooterText] = useState('MERISE FORGE © 2026 - Conçu par PAGUERA');
   const [footerLinks, setFooterLinks] = useState<FooterLink[]>([]);
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
 

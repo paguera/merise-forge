@@ -1,185 +1,138 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
-
 @layer base {
-  :root {
-    --background: 210 20% 98%;
-    --foreground: 222 47% 11%;
-
-    --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
-
-    --primary: 221 83% 53%;
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222 47% 11%;
-
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
-
-    --accent: 152 69% 41%;
-    --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 221 83% 53%;
-
-    --radius: 0.625rem;
-
-    /* Custom tokens */
-    --canvas: 213 40% 95%;
-    --canvas-grid: 213 30% 88%;
-    --entity: 0 0% 100%;
-    --entity-border: 222 47% 11%;
-    --relation: 0 0% 100%;
-    --relation-border: 221 83% 53%;
-    --pk-badge: 152 69% 41%;
-    --fk-badge: 38 92% 50%;
-    --junction-table: 0 0% 100%;
-    --junction-border: 215 16% 47%;
-
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 222 47% 11%;
-    --sidebar-primary: 221 83% 53%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 40% 96%;
-    --sidebar-accent-foreground: 222 47% 11%;
-    --sidebar-border: 214 32% 91%;
-    --sidebar-ring: 221 83% 53%;
-  }
-
-  .dark {
-    --background: 222 47% 8%;
-    --foreground: 210 40% 98%;
-
-    --card: 222 47% 11%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222 47% 11%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 221 83% 53%;
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
-
-    --accent: 152 69% 41%;
-    --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 213 27% 84%;
-
-    --canvas: 222 47% 11%;
-    --canvas-grid: 217 33% 20%;
-    --entity: 217 33% 17%;
-    --entity-border: 210 40% 98%;
-    --relation: 217 33% 17%;
-    --relation-border: 221 83% 53%;
-    --pk-badge: 152 69% 41%;
-    --fk-badge: 38 92% 50%;
-    --junction-table: 217 33% 17%;
-    --junction-border: 215 20% 65%;
-
-    --sidebar-background: 222 47% 11%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 221 83% 53%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 217 33% 17%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217 33% 17%;
-    --sidebar-ring: 221 83% 53%;
-  }
-
-  /* Spotify Theme */
-  .spotify {
-    --background: 0 0% 0%;
+  :root,
+  .dark,
+  .cyber-yellow {
+    /* Cyberpunk Yellow & Dark (Inspiré portfolio.paguera.fr) */
+    --background: 224 45% 5%; /* #07080e */
     --foreground: 0 0% 100%;
 
-    --card: 0 0% 7%;
+    --card: 223 42% 9%; /* #0d1527 */
     --card-foreground: 0 0% 100%;
 
-    --popover: 0 0% 7%;
+    --popover: 223 42% 9%;
     --popover-foreground: 0 0% 100%;
 
-    --primary: 141 73% 42%;
+    --primary: 48 96% 53%; /* #facc15 - Cyberpunk Electric Yellow */
     --primary-foreground: 0 0% 0%;
 
-    --secondary: 0 0% 14%;
+    --secondary: 223 35% 15%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 0 0% 14%;
-    --muted-foreground: 0 0% 65%;
+    --muted: 223 30% 14%;
+    --muted-foreground: 220 15% 65%;
 
-    --accent: 141 73% 42%;
+    --accent: 189 94% 43%; /* #06b6d4 - Neon Cyan / Electric Blue */
     --accent-foreground: 0 0% 0%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 18%;
-    --input: 0 0% 18%;
-    --ring: 141 73% 42%;
+    --border: 223 30% 18%;
+    --input: 223 30% 18%;
+    --ring: 48 96% 53%;
 
-    --canvas: 0 0% 4%;
-    --canvas-grid: 0 0% 12%;
-    --entity: 0 0% 10%;
-    --entity-border: 141 73% 42%;
-    --relation: 0 0% 10%;
-    --relation-border: 141 73% 42%;
-    --pk-badge: 141 73% 42%;
-    --fk-badge: 38 92% 50%;
-    --junction-table: 0 0% 10%;
-    --junction-border: 0 0% 40%;
+    --radius: 0.625rem;
 
-    --sidebar-background: 0 0% 7%;
+    /* Custom tokens */
+    --canvas: 224 45% 4%;
+    --canvas-grid: 223 35% 16%;
+    --entity: 223 42% 10%;
+    --entity-border: 48 96% 53%;
+    --relation: 223 42% 10%;
+    --relation-border: 189 94% 43%;
+    --pk-badge: 48 96% 53%;
+    --fk-badge: 189 94% 43%;
+    --junction-table: 223 42% 10%;
+    --junction-border: 48 96% 53%;
+
+    --sidebar-background: 223 42% 8%;
     --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 141 73% 42%;
+    --sidebar-primary: 48 96% 53%;
     --sidebar-primary-foreground: 0 0% 0%;
-    --sidebar-accent: 0 0% 14%;
+    --sidebar-accent: 223 35% 14%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 0 0% 18%;
-    --sidebar-ring: 141 73% 42%;
+    --sidebar-border: 223 30% 18%;
+    --sidebar-ring: 48 96% 53%;
   }
 
-  /* Dark Violet Neon / Cyberpunk Theme */
-  .violet {
-    --background: 270 50% 5%;
-    --foreground: 270 30% 95%;
+  /* Neon Cyan Theme */
+  .cyber-cyan {
+    --background: 224 50% 4%; /* #060911 */
+    --foreground: 0 0% 100%;
+
+    --card: 223 45% 8%;
+    --card-foreground: 0 0% 100%;
+
+    --popover: 223 45% 8%;
+    --popover-foreground: 0 0% 100%;
+
+    --primary: 187 100% 50%; /* #00f2fe - Fluorescent Cyan */
+    --primary-foreground: 0 0% 0%;
+
+    --secondary: 223 35% 14%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 223 30% 14%;
+    --muted-foreground: 220 15% 65%;
+
+    --accent: 330 85% 60%; /* #ec4899 - Neon Pink */
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 187 40% 18%;
+    --input: 187 40% 18%;
+    --ring: 187 100% 50%;
+
+    --canvas: 224 50% 3%;
+    --canvas-grid: 187 40% 14%;
+    --entity: 223 45% 9%;
+    --entity-border: 187 100% 50%;
+    --relation: 223 45% 9%;
+    --relation-border: 330 85% 60%;
+    --pk-badge: 187 100% 50%;
+    --fk-badge: 330 85% 60%;
+    --junction-table: 223 45% 9%;
+    --junction-border: 187 100% 50%;
+
+    --sidebar-background: 223 45% 7%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 187 100% 50%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 223 35% 14%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 187 40% 18%;
+    --sidebar-ring: 187 100% 50%;
+  }
+
+  /* Violet Synthwave Theme */
+  .cyber-violet {
+    --background: 270 50% 5%; /* #0c041d */
+    --foreground: 270 30% 98%;
 
     --card: 270 45% 9%;
-    --card-foreground: 270 30% 95%;
+    --card-foreground: 270 30% 98%;
 
     --popover: 270 45% 9%;
-    --popover-foreground: 270 30% 95%;
+    --popover-foreground: 270 30% 98%;
 
-    --primary: 270 100% 65%;
+    --primary: 270 100% 65%; /* #a855f7 - Neon Violet */
     --primary-foreground: 0 0% 100%;
 
     --secondary: 270 40% 14%;
-    --secondary-foreground: 270 30% 95%;
+    --secondary-foreground: 270 30% 98%;
 
     --muted: 270 30% 14%;
-    --muted-foreground: 270 20% 60%;
+    --muted-foreground: 270 20% 65%;
 
-    --accent: 300 100% 60%;
+    --accent: 340 90% 60%; /* #f43f5e - Hot Rose */
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 90% 55%;
@@ -189,28 +142,76 @@
     --input: 270 40% 18%;
     --ring: 270 100% 65%;
 
-    --canvas: 270 50% 6%;
+    --canvas: 270 50% 4%;
     --canvas-grid: 270 40% 14%;
-    --entity: 270 40% 12%;
+    --entity: 270 40% 11%;
     --entity-border: 270 100% 65%;
-    --relation: 270 40% 12%;
-    --relation-border: 300 100% 60%;
+    --relation: 270 40% 11%;
+    --relation-border: 340 90% 60%;
     --pk-badge: 270 100% 65%;
-    --fk-badge: 300 100% 60%;
-    --junction-table: 270 40% 12%;
+    --fk-badge: 340 90% 60%;
+    --junction-table: 270 40% 11%;
     --junction-border: 270 30% 35%;
 
     --sidebar-background: 270 45% 9%;
-    --sidebar-foreground: 270 30% 95%;
+    --sidebar-foreground: 270 30% 98%;
     --sidebar-primary: 270 100% 65%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 270 40% 14%;
-    --sidebar-accent-foreground: 270 30% 95%;
+    --sidebar-accent-foreground: 270 30% 98%;
     --sidebar-border: 270 40% 18%;
     --sidebar-ring: 270 100% 65%;
+  }
 
-    --neon-glow: 270 100% 65%;
-    --neon-accent: 300 100% 60%;
+  /* Stealth Dark Theme */
+  .cyber-dark {
+    --background: 222 47% 6%; /* #090d16 */
+    --foreground: 210 40% 98%;
+
+    --card: 222 40% 10%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222 40% 10%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 199 89% 48%; /* #0ea5e9 - Titanium Sky */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 217 33% 16%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217 33% 16%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 238 84% 67%; /* #818cf8 - Indigo Neon */
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217 33% 18%;
+    --input: 217 33% 18%;
+    --ring: 199 89% 48%;
+
+    --canvas: 222 47% 5%;
+    --canvas-grid: 217 33% 15%;
+    --entity: 222 40% 11%;
+    --entity-border: 199 89% 48%;
+    --relation: 222 40% 11%;
+    --relation-border: 238 84% 67%;
+    --pk-badge: 199 89% 48%;
+    --fk-badge: 238 84% 67%;
+    --junction-table: 222 40% 11%;
+    --junction-border: 215 20% 65%;
+
+    --sidebar-background: 222 47% 9%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 199 89% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 217 33% 16%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 217 33% 18%;
+    --sidebar-ring: 199 89% 48%;
   }
 }
 
@@ -221,10 +222,11 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-family: 'Plus Jakarta Sans', 'Outfit', sans-serif;
   }
 
-  code, .font-mono {
+  code,
+  .font-mono {
     font-family: 'JetBrains Mono', monospace;
   }
 }
@@ -232,126 +234,31 @@
 @layer components {
   .canvas-bg {
     @apply bg-canvas;
-    background-image: 
-      radial-gradient(circle, hsl(var(--canvas-grid)) 1px, transparent 1px);
-    background-size: 20px 20px;
+    background-image: radial-gradient(circle, hsl(var(--canvas-grid)) 1.5px, transparent 1.5px);
+    background-size: 24px 24px;
   }
 
-  /* Neumorphism Design System */
+  /* Cyber Glow & Card Styles */
+  .cyber-glow-yellow {
+    box-shadow: 0 0 15px hsla(48, 96%, 53%, 0.3), inset 0 0 15px hsla(48, 96%, 53%, 0.05);
+  }
+
+  .cyber-glow-cyan {
+    box-shadow: 0 0 15px hsla(187, 100%, 50%, 0.3), inset 0 0 15px hsla(187, 100%, 50%, 0.05);
+  }
+
+  .cyber-glow-violet {
+    box-shadow: 0 0 15px hsla(270, 100%, 65%, 0.35), inset 0 0 15px hsla(270, 100%, 65%, 0.05);
+  }
+
   .neu-card {
-    @apply bg-card border-0 transition-all duration-300;
-    box-shadow: 
-      6px 6px 12px hsl(var(--foreground) / 0.08),
-      -6px -6px 12px hsl(var(--background) / 0.8);
-  }
-
-  .dark .neu-card,
-  .spotify .neu-card,
-  .violet .neu-card-base {
-    box-shadow: 
-      6px 6px 12px hsl(0 0% 0% / 0.4),
-      -6px -6px 12px hsl(var(--card) / 0.3);
+    @apply bg-card/90 border border-border/80 transition-all duration-300;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
   }
 
   .neu-card:hover {
-    box-shadow: 
-      8px 8px 16px hsl(var(--foreground) / 0.1),
-      -8px -8px 16px hsl(var(--background) / 0.9);
-  }
-
-  .dark .neu-card:hover,
-  .spotify .neu-card:hover {
-    box-shadow: 
-      8px 8px 18px hsl(0 0% 0% / 0.5),
-      -8px -8px 18px hsl(var(--card) / 0.4);
-  }
-
-  .neu-button {
-    @apply border-0 transition-all duration-200;
-    box-shadow: 
-      3px 3px 6px hsl(var(--foreground) / 0.1),
-      -3px -3px 6px hsl(var(--background) / 0.8);
-  }
-
-  .dark .neu-button,
-  .spotify .neu-button {
-    box-shadow: 
-      3px 3px 6px hsl(0 0% 0% / 0.3),
-      -3px -3px 6px hsl(var(--card) / 0.2);
-  }
-
-  .neu-button:hover {
-    box-shadow: 
-      1px 1px 3px hsl(var(--foreground) / 0.1),
-      -1px -1px 3px hsl(var(--background) / 0.8);
-  }
-
-  .neu-button:active {
-    box-shadow: 
-      inset 2px 2px 4px hsl(var(--foreground) / 0.1),
-      inset -2px -2px 4px hsl(var(--background) / 0.8);
-  }
-
-  .neu-button-primary {
-    @apply bg-primary text-primary-foreground border-0 transition-all duration-200;
-    box-shadow: 
-      3px 3px 6px hsl(var(--primary) / 0.3),
-      -3px -3px 6px hsl(var(--primary) / 0.1);
-  }
-
-  .neu-button-primary:hover {
-    box-shadow: 
-      2px 2px 4px hsl(var(--primary) / 0.4),
-      -2px -2px 4px hsl(var(--primary) / 0.2);
-  }
-
-  .neu-input {
-    @apply border-0 bg-card transition-all duration-200;
-    box-shadow: 
-      inset 2px 2px 4px hsl(var(--foreground) / 0.05),
-      inset -2px -2px 4px hsl(var(--background) / 0.8);
-  }
-
-  .dark .neu-input,
-  .spotify .neu-input {
-    box-shadow: 
-      inset 2px 2px 4px hsl(0 0% 0% / 0.3),
-      inset -2px -2px 4px hsl(var(--card) / 0.2);
-  }
-
-  .neu-input:focus {
-    box-shadow: 
-      inset 3px 3px 6px hsl(var(--primary) / 0.1),
-      inset -3px -3px 6px hsl(var(--background) / 0.9);
-    @apply ring-1 ring-primary/30;
-  }
-
-  .neu-inset {
-    box-shadow: 
-      inset 4px 4px 8px hsl(var(--foreground) / 0.08),
-      inset -4px -4px 8px hsl(var(--background) / 0.8);
-  }
-
-  .dark .neu-inset,
-  .spotify .neu-inset {
-    box-shadow: 
-      inset 4px 4px 8px hsl(0 0% 0% / 0.4),
-      inset -4px -4px 8px hsl(var(--card) / 0.3);
-  }
-
-  .neu-raised {
-    box-shadow: 
-      6px 6px 12px hsl(var(--foreground) / 0.1),
-      -6px -6px 12px hsl(var(--background) / 0.9),
-      inset 1px 1px 1px hsl(var(--background) / 0.5);
-  }
-
-  .dark .neu-raised,
-  .spotify .neu-raised {
-    box-shadow: 
-      6px 6px 12px hsl(0 0% 0% / 0.5),
-      -6px -6px 12px hsl(var(--card) / 0.3),
-      inset 1px 1px 1px hsl(var(--card) / 0.3);
+    border-color: hsl(var(--primary) / 0.5);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5), 0 0 15px hsl(var(--primary) / 0.2);
   }
 }
 
@@ -368,180 +275,59 @@
     animation: slideUp 0.3s ease-out;
   }
 
-  .animate-cursor-pulse {
-    animation: cursorPulse 2s ease-in-out infinite;
-  }
-
-  .animate-sparkle {
-    animation: sparkle 1.5s ease-in-out infinite;
-  }
-
-  /* Neon Icon Animations — Violet theme */
-  .icon-neon-pulse {
+  .neon-pulse-yellow {
     animation: neonPulse 2s ease-in-out infinite;
-    filter: drop-shadow(0 0 4px hsl(270 100% 65% / 0.6));
+    filter: drop-shadow(0 0 6px rgba(250, 204, 21, 0.7));
   }
 
-  .icon-neon-hover:hover {
-    animation: neonBounce 0.4s ease-out;
-    filter: drop-shadow(0 0 8px hsl(270 100% 65% / 0.8)) drop-shadow(0 0 16px hsl(300 100% 60% / 0.4));
+  .neon-pulse-cyan {
+    animation: neonPulse 2s ease-in-out infinite;
+    filter: drop-shadow(0 0 6px rgba(0, 242, 254, 0.7));
   }
 
-  .icon-neon-spin:hover {
-    animation: neonSpin 0.5s ease-in-out;
-    filter: drop-shadow(0 0 6px hsl(270 100% 65% / 0.7));
-  }
-
-  .violet .glass-effect {
-    background: hsla(270 45% 9% / 0.85);
-    backdrop-filter: blur(16px);
-    border: 1px solid hsla(270 100% 65% / 0.15);
-    box-shadow: 0 0 20px hsla(270 100% 65% / 0.05), inset 0 0 20px hsla(270 100% 65% / 0.03);
-  }
-
-  .violet .gradient-text {
-    background: linear-gradient(135deg, hsl(270 100% 65%), hsl(300 100% 60%), hsl(270 100% 75%));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .violet .neu-card {
-    box-shadow:
-      6px 6px 12px hsl(270 50% 2% / 0.6),
-      -6px -6px 12px hsl(270 45% 12% / 0.3),
-      0 0 15px hsl(270 100% 65% / 0.05);
-  }
-
-  .violet .neu-card:hover {
-    box-shadow:
-      8px 8px 18px hsl(270 50% 2% / 0.7),
-      -8px -8px 18px hsl(270 45% 12% / 0.4),
-      0 0 25px hsl(270 100% 65% / 0.1);
-  }
-
-  /* Apply neon hover to all icons in violet theme */
-  .violet button svg,
-  .violet a svg {
-    transition: filter 0.3s ease, transform 0.2s ease;
-  }
-
-  .violet button:hover svg,
-  .violet a:hover svg {
-    filter: drop-shadow(0 0 6px hsl(270 100% 65% / 0.6));
-    transform: scale(1.1);
-  }
-
-  .violet button:active svg {
-    transform: scale(0.95);
-  }
-
-  .admin-badge-gold {
-    background: linear-gradient(135deg, hsl(45 93% 47%), hsl(38 92% 50%), hsl(45 93% 47%));
-    background-size: 200% 200%;
-    animation: shimmer 2s ease-in-out infinite, sparkle 1.5s ease-in-out infinite;
-    color: hsl(0 0% 0%);
-    border: 1px solid hsl(45 93% 60%);
-    box-shadow: 0 0 10px hsla(45 93% 50% / 0.4), 0 0 20px hsla(45 93% 50% / 0.2);
-  }
-
-  .glass-effect {
-    background: hsla(var(--card) / 0.8);
-    backdrop-filter: blur(12px);
-    border: 1px solid hsla(var(--border) / 0.5);
-  }
-
-  .gradient-text {
-    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  /* Mobile responsive text */
-  .text-responsive-sm {
-    @apply text-xs sm:text-sm;
-  }
-
-  .text-responsive-base {
-    @apply text-sm sm:text-base;
-  }
-
-  .text-responsive-lg {
-    @apply text-base sm:text-lg md:text-xl;
-  }
-
-  /* Icon sizing */
-  .icon-responsive {
-    @apply w-5 h-5 sm:w-6 sm:h-6;
-  }
-
-  .icon-responsive-lg {
-    @apply w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8;
+  .neon-pulse-violet {
+    animation: neonPulse 2s ease-in-out infinite;
+    filter: drop-shadow(0 0 6px rgba(168, 85, 247, 0.7));
   }
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes scaleIn {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes cursorPulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
-}
-
-@keyframes shimmer {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-@keyframes sparkle {
-  0%, 100% { 
-    box-shadow: 0 0 10px hsla(45 93% 50% / 0.4), 0 0 20px hsla(45 93% 50% / 0.2);
+  from {
+    transform: translateY(10px);
+    opacity: 0;
   }
-  50% { 
-    box-shadow: 0 0 15px hsla(45 93% 50% / 0.6), 0 0 30px hsla(45 93% 50% / 0.4), 0 0 5px hsla(45 93% 70% / 0.8);
+  to {
+    transform: translateY(0);
+    opacity: 1;
   }
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-5px); }
 }
 
 @keyframes neonPulse {
-  0%, 100% { 
-    filter: drop-shadow(0 0 4px hsla(270 100% 65% / 0.5));
-    transform: scale(1);
+  0%,
+  100% {
+    opacity: 1;
   }
-  50% { 
-    filter: drop-shadow(0 0 10px hsla(270 100% 65% / 0.8)) drop-shadow(0 0 20px hsla(300 100% 60% / 0.4));
-    transform: scale(1.05);
+  50% {
+    opacity: 0.65;
   }
-}
-
-@keyframes neonBounce {
-  0% { transform: scale(1); }
-  30% { transform: scale(1.2) rotate(5deg); }
-  50% { transform: scale(0.95) rotate(-3deg); }
-  70% { transform: scale(1.1) rotate(2deg); }
-  100% { transform: scale(1) rotate(0deg); }
-}
-
-@keyframes neonSpin {
-  0% { transform: rotate(0deg) scale(1); }
-  50% { transform: rotate(180deg) scale(1.15); }
-  100% { transform: rotate(360deg) scale(1); }
 }

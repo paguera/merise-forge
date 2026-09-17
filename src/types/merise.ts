@@ -73,4 +73,4 @@ export interface MLDModel {
 }
 
 export type ViewMode = 'MCD' | 'MLD' | 'MPD';
-export type SQLDialect = 'MariaDB' | 'MySQL';
+export type SQLDialect = 'MariaDB' | 'MySQL' | 'PostgreSQL' | 'SQLite';

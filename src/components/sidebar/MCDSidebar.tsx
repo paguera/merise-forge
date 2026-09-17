@@ -70,7 +70,7 @@ const StepIndicator = ({ step, currentStep }: { step: CreationStep; currentStep:
 };
 
 export function MCDSidebar({ zoomControls }: MCDSidebarProps) {
-  const { model, addEntity, addRelation, removeEntity, updateEntity, addAttribute, updateAttribute, removeAttribute, reorderAttributes, updateRelation, removeRelation, resetModel } = useMeriseStore();
+  const { model, addEntity, addRelation, removeEntity, updateEntity, addAttribute, updateAttribute, removeAttribute, reorderAttributes, updateRelation, removeRelation, resetModel, autoLayout } = useMeriseStore();
   const [editingEntityId, setEditingEntityId] = useState<string | null>(null);
   const [editingRelation, setEditingRelation] = useState<Relation | null>(null);
   const [step, setStep] = useState<CreationStep>('entity1');
@@ -493,18 +493,32 @@ export function MCDSidebar({ zoomControls }: MCDSidebarProps) {
               </div>
               <h3 className="text-sm font-semibold text-foreground">Données</h3>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-destructive hover:text-destructive hover:bg-destructive/10 h-7 px-2"
-              onClick={() => {
-                resetModel();
-                toast.success('Modèle réinitialisé');
-              }}
-            >
-              <RotateCcw className="w-3 h-3 mr-1" />
-              Reset
-            </Button>
+            <div className="flex items-center gap-1.5">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-primary hover:text-primary hover:bg-primary/10 h-7 px-2 font-medium"
+                onClick={() => {
+                  autoLayout();
+                  toast.success('✨ Schéma réorganisé proprement !');
+                }}
+              >
+                <Sparkles className="w-3 h-3 mr-1" />
+                Ranger
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-destructive hover:text-destructive hover:bg-destructive/10 h-7 px-2"
+                onClick={() => {
+                  resetModel();
+                  toast.success('Modèle réinitialisé');
+                }}
+              >
+                <RotateCcw className="w-3 h-3 mr-1" />
+                Reset
+              </Button>
+            </div>
           </div>
           
           <div className="p-4 space-y-4">

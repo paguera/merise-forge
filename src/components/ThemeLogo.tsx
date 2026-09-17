@@ -1,5 +1,4 @@
-import logoThemes from '@/assets/logo-themes.png';
-import { useTheme } from '@/hooks/useTheme';
+import { useState } from 'react';
 
 interface ThemeLogoProps {
   className?: string;
@@ -7,39 +6,27 @@ interface ThemeLogoProps {
 }
 
 export function ThemeLogo({ className = '', size = 40 }: ThemeLogoProps) {
-  const { theme } = useTheme();
-
-  // The uploaded image has 3 logos stacked vertically:
-  // - Top third: Light theme (white background)
-  // - Middle third: Dark theme (dark blue background)
-  // - Bottom third: Spotify theme (black/green background)
-  // We use background-position to show the correct portion
-
-  const getBackgroundPosition = () => {
-    switch (theme) {
-      case 'light':
-        return '0 0%'; // Top portion
-      case 'dark':
-        return '0 50%'; // Middle portion
-      case 'spotify':
-        return '0 100%'; // Bottom portion
-      default:
-        return '0 50%';
-    }
-  };
+  const [imgSrc, setImgSrc] = useState('/logo.jpeg');
 
   return (
     <div
-      className={`flex-shrink-0 ${className}`}
+      className={`relative inline-flex items-center justify-center overflow-hidden rounded-xl shadow-md ring-1 ring-primary/25 bg-background transition-all hover:scale-105 ${className}`}
       style={{
         width: size,
         height: size,
-        backgroundImage: `url(${logoThemes})`,
-        backgroundSize: 'auto 300%', // 3 logos stacked = 300% height
-        backgroundPosition: getBackgroundPosition(),
-        backgroundRepeat: 'no-repeat',
       }}
-      aria-label="Ressou Merise Logo"
-    />
+      aria-label="MERISE FORGE by PAGUERA"
+    >
+      <img
+        src={imgSrc}
+        alt="MERISE FORGE"
+        className="w-full h-full object-cover"
+        onError={() => {
+          if (imgSrc === '/logo.jpeg') {
+            setImgSrc('/logo.jpg');
+          }
+        }}
+      />
+    </div>
   );
 }

@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import { Entity, Relation, MeriseModel, MLDModel, MLDColumn, MLDTable, ViewMode, SQLDialect, Attribute } from '@/types/merise';
 import { transformMCDtoMLD } from '@/lib/mcdToMld';
 import { generateSQL } from '@/lib/sqlGenerator';
+import { autoLayoutMCD, autoLayoutMLD } from '@/lib/autoLayout';
 
 interface MeriseStore {
   // State
@@ -52,6 +53,9 @@ interface MeriseStore {
   transformToMLD: () => void;
   generateSQLCode: () => void;
   
+  // Auto-Layout
+  autoLayout: () => void;
+
   // Reset
   resetModel: () => void;
 }
@@ -384,6 +388,19 @@ export const useMeriseStore = create<MeriseStore>()(
         if (mldModel) {
           const sql = generateSQL(mldModel, sqlDialect);
           set({ generatedSQL: sql });
+        }
+      },
+
+      autoLayout: () => {
+        const { viewMode, model, mldModel } = get();
+        if (viewMode === 'MCD') {
+          const organized = autoLayoutMCD(model);
+          set({ model: organized });
+        } else if (viewMode === 'MLD' || viewMode === 'MPD') {
+          if (mldModel) {
+            const organized = autoLayoutMLD(mldModel);
+            set({ mldModel: organized });
+          }
         }
       },
 

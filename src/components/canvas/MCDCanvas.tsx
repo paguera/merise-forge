@@ -3,12 +3,8 @@ import { useMeriseStore } from '@/hooks/useMeriseStore';
 import { EntityNode } from './EntityNode';
 import { RelationNode } from './RelationNode';
 import { ConnectionLine } from './ConnectionLine';
-import { CollaboratorCursors } from './CollaboratorCursors';
-import type { PresenceUser } from '@/hooks/useRealtimePresence';
 
 interface Props {
-  users?: PresenceUser[];
-  onCursorMove?: (x: number, y: number) => void;
   zoom: {
     scale: number;
     position: { x: number; y: number };
@@ -20,7 +16,7 @@ interface Props {
   };
 }
 
-export function MCDCanvas({ users = [], onCursorMove, zoom }: Props) {
+export function MCDCanvas({ zoom }: Props) {
   const { model } = useMeriseStore();
   const canvasRef = useRef<HTMLDivElement>(null);
   const { scale, position, handleWheel, startPan, movePan, endPan, isPanning } = zoom;
@@ -33,21 +29,16 @@ export function MCDCanvas({ users = [], onCursorMove, zoom }: Props) {
     }
   }, [handleWheel]);
 
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    movePan(e);
-    if (onCursorMove) {
-      const rect = canvasRef.current?.getBoundingClientRect();
-      if (rect) {
-        const x = (e.clientX - rect.left - position.x) / scale;
-        const y = (e.clientY - rect.top - position.y) / scale;
-        onCursorMove(x, y);
-      }
-    }
-  }, [movePan, onCursorMove, position, scale]);
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent) => {
+      movePan(e);
+    },
+    [movePan]
+  );
 
   return (
-    <div 
-      id="merise-canvas" 
+    <div
+      id="merise-canvas"
       className="flex-1 canvas-bg relative overflow-hidden h-full"
       ref={canvasRef}
       onMouseDown={startPan}
@@ -67,11 +58,11 @@ export function MCDCanvas({ users = [], onCursorMove, zoom }: Props) {
       >
         <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ overflow: 'visible' }}>
           {model.relations.map((relation) => {
-            const entity1 = model.entities.find(e => e.id === relation.entity1Id);
-            const entity2 = model.entities.find(e => e.id === relation.entity2Id);
-            
+            const entity1 = model.entities.find((e) => e.id === relation.entity1Id);
+            const entity2 = model.entities.find((e) => e.id === relation.entity2Id);
+
             if (!entity1 || !entity2) return null;
-            
+
             return (
               <ConnectionLine
                 key={relation.id}
@@ -106,8 +97,6 @@ export function MCDCanvas({ users = [], onCursorMove, zoom }: Props) {
           </div>
         </div>
       )}
-
-      <CollaboratorCursors users={users} />
     </div>
   );
 }

@@ -70,13 +70,37 @@ export function EntityNode({ entity, mode, scale = 1 }: EntityNodeProps) {
       onMouseDown={handleMouseDown}
     >
       <div
-        className={`bg-entity border-2 border-entity-border rounded-lg shadow-md min-w-[120px] ${
-          isSelected ? 'ring-2 ring-primary ring-offset-2' : ''
+        className={`bg-entity border-2 border-entity-border rounded-lg shadow-md min-w-[180px] max-w-[280px] overflow-hidden ${
+          isSelected ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''
         }`}
       >
-        <div className="px-6 py-3 text-center font-semibold text-foreground">
+        <div className="px-4 py-2 text-center font-bold text-foreground bg-primary/10 border-b border-entity-border/50 truncate">
           {entity.name}
         </div>
+        {entity.attributes && entity.attributes.length > 0 && (
+          <div className="divide-y divide-border/40 text-xs bg-card/60">
+            {entity.attributes.map((attr) => (
+              <div
+                key={attr.id}
+                className="px-3 py-1 flex items-center justify-between gap-2 hover:bg-muted/30 transition-colors"
+              >
+                <div className="flex items-center gap-1.5 truncate">
+                  {attr.isPrimaryKey ? (
+                    <span className="font-bold underline decoration-primary decoration-2 text-primary">
+                      # {attr.name}
+                    </span>
+                  ) : (
+                    <span className="text-foreground/90">{attr.name}</span>
+                  )}
+                </div>
+                <span className="text-[10px] text-muted-foreground font-mono shrink-0">
+                  {attr.type}
+                  {attr.length ? `(${attr.length})` : ''}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -2,16 +2,12 @@ import { useEffect, useRef, useCallback } from 'react';
 import { useMeriseStore } from '@/hooks/useMeriseStore';
 import { TableNode } from './TableNode';
 import { MLDConnectionLine } from './MLDConnectionLine';
-import { CollaboratorCursors } from './CollaboratorCursors';
-import type { PresenceUser } from '@/hooks/useRealtimePresence';
 
 const TABLE_WIDTH = 180;
 const TABLE_HEADER_HEIGHT = 40;
 const TABLE_ROW_HEIGHT = 36;
 
 interface Props {
-  users?: PresenceUser[];
-  onCursorMove?: (x: number, y: number) => void;
   zoom: {
     scale: number;
     position: { x: number; y: number };
@@ -23,7 +19,7 @@ interface Props {
   };
 }
 
-export function MPDCanvas({ users = [], onCursorMove, zoom }: Props) {
+export function MPDCanvas({ zoom }: Props) {
   const { mldModel } = useMeriseStore();
   const canvasRef = useRef<HTMLDivElement>(null);
   const { scale, position, handleWheel, startPan, movePan, endPan, isPanning } = zoom;
@@ -36,21 +32,19 @@ export function MPDCanvas({ users = [], onCursorMove, zoom }: Props) {
     }
   }, [handleWheel]);
 
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    movePan(e);
-    if (onCursorMove) {
-      const rect = canvasRef.current?.getBoundingClientRect();
-      if (rect) {
-        const x = (e.clientX - rect.left - position.x) / scale;
-        const y = (e.clientY - rect.top - position.y) / scale;
-        onCursorMove(x, y);
-      }
-    }
-  }, [movePan, onCursorMove, position, scale]);
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent) => {
+      movePan(e);
+    },
+    [movePan]
+  );
 
   if (!mldModel) {
     return (
-      <div id="merise-canvas" className="flex-1 canvas-bg relative overflow-hidden h-full flex items-center justify-center">
+      <div
+        id="merise-canvas"
+        className="flex-1 canvas-bg relative overflow-hidden h-full flex items-center justify-center"
+      >
         <div className="text-center text-muted-foreground">
           <p className="text-lg font-medium">Aucun modèle MPD</p>
           <p className="text-sm">Créez d'abord un MCD pour générer le MPD</p>
@@ -60,8 +54,8 @@ export function MPDCanvas({ users = [], onCursorMove, zoom }: Props) {
   }
 
   return (
-    <div 
-      id="merise-canvas" 
+    <div
+      id="merise-canvas"
       className="flex-1 canvas-bg relative overflow-hidden h-full"
       ref={canvasRef}
       onMouseDown={startPan}
@@ -81,8 +75,8 @@ export function MPDCanvas({ users = [], onCursorMove, zoom }: Props) {
       >
         <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ overflow: 'visible' }}>
           {mldModel.relations.map((relation) => {
-            const fromTable = mldModel.tables.find(t => t.name === relation.fromTable);
-            const toTable = mldModel.tables.find(t => t.name === relation.toTable);
+            const fromTable = mldModel.tables.find((t) => t.name === relation.fromTable);
+            const toTable = mldModel.tables.find((t) => t.name === relation.toTable);
             if (!fromTable || !toTable) return null;
 
             const fromHeight = TABLE_HEADER_HEIGHT + fromTable.columns.length * TABLE_ROW_HEIGHT;
@@ -109,8 +103,6 @@ export function MPDCanvas({ users = [], onCursorMove, zoom }: Props) {
           <TableNode key={table.id} table={table} showTypes={true} scale={scale} />
         ))}
       </div>
-
-      <CollaboratorCursors users={users} />
     </div>
   );
 }

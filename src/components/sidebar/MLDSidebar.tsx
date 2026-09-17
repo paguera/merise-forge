@@ -1,7 +1,9 @@
-import { Info } from 'lucide-react';
+import { Info, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { useMeriseStore } from '@/hooks/useMeriseStore';
 import { ZoomControls } from '@/components/canvas/ZoomControls';
+import { toast } from 'sonner';
 
 interface ZoomControlProps {
   scale: number;
@@ -15,7 +17,7 @@ interface MLDSidebarProps {
 }
 
 export function MLDSidebar({ zoomControls }: MLDSidebarProps) {
-  const { mldModel, model } = useMeriseStore();
+  const { mldModel, model, autoLayout } = useMeriseStore();
 
   if (!mldModel) return null;
 
@@ -31,7 +33,21 @@ export function MLDSidebar({ zoomControls }: MLDSidebarProps) {
     <div className="w-80 bg-card border-r border-border flex flex-col h-full overflow-hidden">
       <div className="p-5 space-y-5 flex-1 overflow-y-auto">
         <div className="bg-secondary/50 rounded-lg p-5 space-y-3">
-          <h2 className="text-lg font-semibold text-foreground">Mode Logique</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-foreground">Mode Logique</h2>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs font-semibold text-primary border-primary/30 hover:bg-primary/10 gap-1"
+              onClick={() => {
+                autoLayout();
+                toast.success('✨ Tables MLD rangées proprement !');
+              }}
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              Ranger
+            </Button>
+          </div>
           <p className="text-sm text-muted-foreground">
             Transformation automatique des relations.
           </p>

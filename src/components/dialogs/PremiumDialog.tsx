@@ -159,7 +159,7 @@ export function PremiumDialog({ open, onOpenChange, onSuccess, userId }: Premium
             Passez à Premium
           </DialogTitle>
           <DialogDescription className="text-base text-muted-foreground">
-            Débloquez tout le potentiel de Ressou Merise
+            Débloquez tout le potentiel de MERISE FORGE
           </DialogDescription>
         </DialogHeader>
 

@@ -6,11 +6,13 @@ export interface SiteSetting {
 }
 
 export function useSiteSettings() {
-  const [settings] = useState<Record<string, string | null>>(() => {
+  const [settings, setSettings] = useState<Record<string, string | null>>(() => {
     try {
       const saved = localStorage.getItem('merise-site-settings');
       if (saved) return JSON.parse(saved);
-    } catch {}
+    } catch {
+      // ignore JSON parse error
+    }
     return {
       logo_url: null,
       logo_size: '48',
@@ -19,6 +21,15 @@ export function useSiteSettings() {
       announcement_active: 'false',
     };
   });
+
+  const fetchSettings = () => {
+    try {
+      const saved = localStorage.getItem('merise-site-settings');
+      if (saved) setSettings(JSON.parse(saved));
+    } catch {
+      // ignore JSON parse error
+    }
+  };
 
   const getSetting = (key: string): string | null => {
     return settings[key] ?? null;
@@ -44,7 +55,7 @@ export function useSiteSettings() {
 
   return {
     settings,
-    loading,
+    loading: false,
     getSetting,
     hasLogo,
     getLogoSize,

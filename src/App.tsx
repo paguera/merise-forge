@@ -11,13 +11,14 @@ const queryClient = new QueryClient();
 
 const App = () => {
   const [showSplash, setShowSplash] = useState(() => {
-    // Check if user has seen splash before in this session
-    const hasSeenSplash = sessionStorage.getItem('merise-splash-seen');
-    return !hasSeenSplash;
+    if (typeof window !== "undefined") {
+      const pathname = window.location.pathname;
+      return pathname === "/" || pathname === "";
+    }
+    return false;
   });
 
   const handleSplashComplete = () => {
-    sessionStorage.setItem('merise-splash-seen', 'true');
     setShowSplash(false);
   };
 

@@ -1,7 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Github, Twitter, Linkedin, Mail, Heart, ExternalLink } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 
 interface FooterLink {
   label: string;
@@ -21,40 +20,9 @@ const socialIcons: Record<string, React.ReactNode> = {
 };
 
 export function Footer() {
-  const [footerText, setFooterText] = useState('MERISE FORGE © 2026 - Conçu par PAGUERA');
-  const [footerLinks, setFooterLinks] = useState<FooterLink[]>([]);
-  const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
-
-  useEffect(() => {
-    fetchSettings();
-  }, []);
-
-  const fetchSettings = async () => {
-    const { data } = await supabase
-      .from('site_settings')
-      .select('key, value')
-      .in('key', ['footer_text', 'footer_links', 'footer_social']);
-
-    if (data) {
-      data.forEach((setting) => {
-        if (setting.key === 'footer_text' && setting.value) {
-          setFooterText(setting.value);
-        } else if (setting.key === 'footer_links' && setting.value) {
-          try {
-            setFooterLinks(JSON.parse(setting.value));
-          } catch (e) {
-            console.error('Failed to parse footer links', e);
-          }
-        } else if (setting.key === 'footer_social' && setting.value) {
-          try {
-            setSocialLinks(JSON.parse(setting.value));
-          } catch (e) {
-            console.error('Failed to parse social links', e);
-          }
-        }
-      });
-    }
-  };
+  const [footerText] = useState('MERISE FORGE © 2026 - Conçu par PAGUERA');
+  const [footerLinks] = useState<FooterLink[]>([]);
+  const [socialLinks] = useState<SocialLink[]>([]);
 
   return (
     <motion.footer

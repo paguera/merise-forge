@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useState } from 'react';
 
 export interface SiteSetting {
   key: string;
@@ -7,38 +6,19 @@ export interface SiteSetting {
 }
 
 export function useSiteSettings() {
-  const [settings, setSettings] = useState<Record<string, string | null>>({
-    logo_url: null,
-    logo_size: '48',
-    site_name: 'MERISE FORGE',
-    announcement_text: null,
-    announcement_active: 'false',
-  });
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchSettings();
-  }, []);
-
-  const fetchSettings = async () => {
+  const [settings] = useState<Record<string, string | null>>(() => {
     try {
-      const { data } = await supabase
-        .from('site_settings')
-        .select('key, value');
-
-      if (data) {
-        const settingsMap: Record<string, string | null> = {};
-        data.forEach((setting) => {
-          settingsMap[setting.key] = setting.value;
-        });
-        setSettings(prev => ({ ...prev, ...settingsMap }));
-      }
-    } catch (error) {
-      console.error('Failed to fetch site settings:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+      const saved = localStorage.getItem('merise-site-settings');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return {
+      logo_url: null,
+      logo_size: '48',
+      site_name: 'MERISE FORGE',
+      announcement_text: null,
+      announcement_active: 'false',
+    };
+  });
 
   const getSetting = (key: string): string | null => {
     return settings[key] ?? null;

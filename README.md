@@ -19,6 +19,7 @@
 - [Architecture & Pile Technique](#-architecture--pile-technique)
 - [Structure du Projet](#-structure-du-projet)
 - [Installation & Démarrage Local](#-installation--démarrage-local)
+- [Déploiement Docker & Docker Compose](#-déploiement-docker--docker-compose)
 - [Scripts Disponibles](#-scripts-disponibles)
 
 ---
@@ -139,6 +140,29 @@ L'application est disponible immédiatement sur `http://localhost:8080`.
 ```bash
 npm run build
 ```
+
+---
+
+## 🐳 Déploiement Docker & Docker Compose
+
+L'application intègre un `Dockerfile` multi-étapes (Node 20 Alpine pour la compilation, puis Nginx Alpine pour le service) et un `docker-compose.yml`.
+
+### Démarrage avec Docker Compose / Podman Compose
+
+1. Configurer les variables d'environnement dans votre fichier `.env` (ou copier depuis `.env.example`) :
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Lancer le conteneur en arrière-plan :
+   ```bash
+   docker compose up -d --build
+   # Ou avec Podman :
+   podman-compose up -d --build
+   ```
+
+3. L'application est alors accessible sur `http://localhost:8085` (ou le port défini dans `PORT`).
+
 
 ---
 

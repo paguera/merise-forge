@@ -1,0 +1,17 @@
+services:
+  # --- MERISE FORGE: FRONTEND SPA ---
+  merise-forge:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: merise-forge:latest
+    container_name: merise-forge
+    restart: always
+    ports:
+      - "${PORT:-8085}:80"
+    networks:
+      - nas-net
+
+networks:
+  nas-net:
+    external: true

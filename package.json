@@ -1,7 +1,6 @@
 {
   "name": "merise-forge",
-  "description": "MERISE FORGE by PAGUERA - Outil de modélisation Merise MCD, MLD, MPD & SQL",
-  "author": "PAGUERA",
+  "description": "Merise Forge - Outil de modélisation Merise MCD, MLD, MPD & SQL",
   "private": true,
   "version": "1.0.0",
   "type": "module",

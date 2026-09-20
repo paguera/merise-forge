@@ -26,7 +26,7 @@ USING (bucket_id = 'avatars' AND auth.uid()::text = (storage.foldername(name))[1
 
 -- Add footer settings keys if missing
 INSERT INTO public.site_settings (key, value) VALUES
-  ('footer_text', '© 2025 Ressou Merise. Tous droits réservés.'),
+  ('footer_text', 'MERISE FORGE'),
   ('footer_links', '[]'),
   ('footer_social', '[]')
 ON CONFLICT (key) DO NOTHING;

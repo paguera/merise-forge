@@ -8,7 +8,7 @@ export const THEMES_META: Record<
 > = {
   'cyber-yellow': {
     name: 'Cyberpunk Yellow',
-    description: 'Ambiance Cyberpunk Jaune Électrique & Sombre (style PAGUERA)',
+    description: 'Ambiance Cyberpunk Jaune Électrique & Sombre',
     primaryColor: '#facc15',
     accentColor: '#06b6d4',
     bg: '#07080e',

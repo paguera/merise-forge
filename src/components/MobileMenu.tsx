@@ -69,9 +69,6 @@ export function MobileMenu({
             <SheetTitle className="text-left text-sm font-bold bg-gradient-to-r from-primary to-blue-400 bg-clip-text text-transparent">
               MERISE FORGE
             </SheetTitle>
-            <span className="text-[9px] uppercase font-semibold text-muted-foreground">
-              by PAGUERA
-            </span>
           </div>
         </SheetHeader>
 
@@ -169,7 +166,7 @@ export function MobileMenu({
               </span>
               <span className="text-xs font-bold uppercase text-primary">
                 {theme === 'cyber-yellow'
-                  ? 'Yellow (PAGUERA)'
+                  ? 'Cyberpunk Yellow'
                   : theme === 'cyber-cyan'
                   ? 'Cyan Fluo'
                   : theme === 'cyber-violet'

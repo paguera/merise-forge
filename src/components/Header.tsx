@@ -295,9 +295,6 @@ export function Header() {
                 <h1 className="text-base sm:text-xl font-black tracking-tight bg-gradient-to-r from-primary via-yellow-300 to-accent bg-clip-text text-transparent">
                   {settings.site_name || 'MERISE FORGE'}
                 </h1>
-                <span className="text-[9px] uppercase font-extrabold px-1.5 py-0.5 rounded bg-primary/15 text-primary border border-primary/30 hidden sm:inline-block tracking-wider">
-                  by PAGUERA
-                </span>
               </div>
             </div>
           </div>
@@ -447,7 +444,7 @@ export function Header() {
                 <p>
                   Thème :{' '}
                   {theme === 'cyber-yellow'
-                    ? 'Cyberpunk Yellow (PAGUERA)'
+                    ? 'Cyberpunk Yellow'
                     : theme === 'cyber-cyan'
                     ? 'Neon Cyan Fluo'
                     : theme === 'cyber-violet'

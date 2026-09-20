@@ -10,7 +10,7 @@ CREATE TABLE public.site_settings (
 -- Default site settings
 INSERT INTO public.site_settings (key, value) VALUES 
   ('logo_url', NULL),
-  ('site_name', 'Ressou Merise'),
+  ('site_name', 'MERISE FORGE'),
   ('announcement_text', NULL),
   ('announcement_active', 'false');
 

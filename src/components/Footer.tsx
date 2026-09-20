@@ -20,7 +20,7 @@ const socialIcons: Record<string, React.ReactNode> = {
 };
 
 export function Footer() {
-  const [footerText] = useState('MERISE FORGE © 2026 - Conçu par PAGUERA');
+  const [footerText] = useState('Merise Forge');
   const [footerLinks] = useState<FooterLink[]>([]);
   const [socialLinks] = useState<SocialLink[]>([]);
 
@@ -49,17 +49,10 @@ export function Footer() {
             ))}
           </div>
 
-          {/* Copyright */}
+          {/* Title */}
           <div className="text-center">
-            <p className="text-sm text-muted-foreground flex items-center justify-center gap-1">
-              {footerText.includes('❤') ? (
-                footerText
-              ) : (
-                <>
-                  {footerText.replace('©', '')}
-                  <Heart className="w-3 h-3 text-red-500 fill-red-500 mx-1" />
-                </>
-              )}
+            <p className="text-sm text-muted-foreground font-semibold tracking-wide">
+              {footerText}
             </p>
           </div>
 

@@ -3,7 +3,6 @@
 <div align="center">
   <img src="public/logo.jpeg" alt="MERISE FORGE Logo" width="120" style="border-radius: 16px; box-shadow: 0 0 30px rgba(250, 204, 21, 0.4);" />
   <h3><strong>MERISE FORGE</strong></h3>
-  <p><em>by PAGUERA</em></p>
   <p><strong>L'outil moderne, visuel et 100% autonome de modélisation Merise · Ambiance Cyberpunk</strong></p>
   <p>MCD (Conceptuel) $\rightarrow$ MLD (Logique) $\rightarrow$ MPD & SQL (MariaDB, MySQL, PostgreSQL, SQLite)</p>
 </div>
@@ -26,7 +25,7 @@
 
 ## 🚀 Aperçu du Projet
 
-**MERISE FORGE** (par **PAGUERA**) est une application web moderne, visuelle et totalement autonome, conçue pour modéliser des bases de données relationnelles selon la méthode Merise avec une direction artistique Cyberpunk sombre & néons :
+**Merise Forge** est une application web moderne, visuelle et totalement autonome, conçue pour modéliser des bases de données relationnelles selon la méthode Merise avec une direction artistique Cyberpunk sombre & néons :
 
 1. **MCD (Modèle Conceptuel de Données)** :
    - Création visuelle d'entités, d'attributs (types, contraintes, clés primaires, nullabilité, unicité) et d'associations.
@@ -41,7 +40,7 @@
 
 ## ⚡ Thèmes Cyberpunk & Néons Fluo
 
-Directement inspiré par l'univers visuel de **PAGUERA**, MERISE FORGE propose 4 déclinaisons thématiques sombres et fluorescentes :
+Merise Forge propose 4 déclinaisons thématiques sombres et fluorescentes :
 
 1. 🟡 **Cyberpunk Yellow (Défaut)** : Fond sombre profond (`#07080e`), jaune électrique fluorescent (`#facc15`), cyan néon (`#06b6d4`), et effets de lueurs ambiantes.
 2. 🔷 **Neon Cyan Fluo** : Bleu cyan électrique (`#00f2fe`) et rose néon (`#ec4899`) sur fond ultra-sombre.
@@ -167,5 +166,5 @@ L'application intègre un `Dockerfile` multi-étapes (Node 20 Alpine pour la com
 ---
 
 <div align="center">
-  <sub>Conçu avec passion par <strong>PAGUERA</strong> · Tous droits réservés © 2026</sub>
+  <sub><strong>Merise Forge</strong></sub>
 </div>

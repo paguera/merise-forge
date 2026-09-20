@@ -116,16 +116,13 @@ export function WelcomeSplash({ onComplete }: WelcomeSplashProps) {
             </motion.div>
           </div>
 
-          {/* Subtitles & Signature */}
+          {/* Subtitles */}
           <motion.div
             className="flex flex-col items-center gap-1.5 mt-5"
             initial={{ opacity: 0, y: 15 }}
             animate={phase === 'logo' ? { opacity: 1, y: 0 } : { opacity: 0, y: -15 }}
             transition={{ duration: 0.5, delay: 0.35 }}
           >
-            <span className="text-xs sm:text-sm font-extrabold tracking-[0.35em] uppercase text-yellow-400 drop-shadow-[0_0_10px_rgba(250,204,21,0.6)]">
-              by PAGUERA
-            </span>
             <p className="text-xs text-slate-400 font-medium tracking-widest uppercase">
               Modélisation Conceptuelle · Logique · Physique
             </p>
